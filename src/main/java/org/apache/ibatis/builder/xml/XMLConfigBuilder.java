@@ -125,7 +125,13 @@ public class XMLConfigBuilder extends BaseBuilder {
        * 解析别名相关的配置,用于处理ResultMap、ResultType、ParameterType、ParameterMap
        */
       typeAliasesElement(root.evalNode("typeAliases"));
+      /**
+       * 插件的解析
+       */
       pluginElement(root.evalNode("plugins"));
+      /**
+       * 自定义实例化对象的行为
+       */
       objectFactoryElement(root.evalNode("objectFactory"));
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
