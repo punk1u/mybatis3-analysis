@@ -14,7 +14,13 @@ public class TestMyBatis {
 
   public static void main(String[] args) throws IOException {
     String resource = "resources/mybatis.xml";
+    /**
+     * 读取MyBatis相关的配置文件
+     */
     InputStream inputStream = Resources.getResourceAsStream(resource);
+    /**
+     * 根据读取的MyBatis配置文件的输入流对象，构建可生成SqlSession的SqlSessionFactory工厂对象
+     */
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
     /**
      * 从调用者的角度来讲，与数据库打交道的对象 SqlSession

@@ -91,15 +91,29 @@ public class XMLConfigBuilder extends BaseBuilder {
     this.parser = parser;
   }
 
+  /**
+   * 将XMLConfigBuilder解析成存储MyBatis配置信息的Configuration对象
+   * @return
+   */
   public Configuration parse() {
+    /**
+     * 每个配置文件只解析一次
+     */
     if (parsed) {
       throw new BuilderException("Each XMLConfigBuilder can only be used once.");
     }
     parsed = true;
+    /**
+     * 从XML配置文件的configuration节点开始解析，因为MyBatis的配置信息都是在xml的这个节点下的
+     */
     parseConfiguration(parser.evalNode("/configuration"));
     return configuration;
   }
 
+  /**
+   * 解析XML文件中的节点
+   * @param root
+   */
   private void parseConfiguration(XNode root) {
     try {
       // issue #117 read properties first
@@ -107,6 +121,9 @@ public class XMLConfigBuilder extends BaseBuilder {
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       loadCustomVfs(settings);
       loadCustomLogImpl(settings);
+      /**
+       * 解析别名相关的配置,用于处理ResultMap、ResultType、ParameterType、ParameterMap
+       */
       typeAliasesElement(root.evalNode("typeAliases"));
       pluginElement(root.evalNode("plugins"));
       objectFactoryElement(root.evalNode("objectFactory"));
@@ -160,6 +177,11 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void typeAliasesElement(XNode parent) {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        /**
+         * 别名的设置方式有两种，第一种通过package批量设置指定目录下有关别名的相关配置
+         * 第二种通过alias和type节点进行设置,alias属性的值指别名的名称，
+         * type的值指这个别名所指向的对象类型
+         */
         if ("package".equals(child.getName())) {
           String typeAliasPackage = child.getStringAttribute("name");
           configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);
@@ -167,8 +189,18 @@ public class XMLConfigBuilder extends BaseBuilder {
           String alias = child.getStringAttribute("alias");
           String type = child.getStringAttribute("type");
           try {
+            /**
+             * 实例化这个别名表示的类型的Class对象
+             */
             Class<?> clazz = Resources.classForName(type);
+            /**
+             * 注册别名名称-别名Class对象的关系
+             */
             if (alias == null) {
+              /**
+               * 如果别名的名称为空，则判断这个Class对象上是否有@Alias注解，如果有的话，
+               * 使用这个注解的值作为这个别名的名字
+               */
               typeAliasRegistry.registerAlias(clazz);
             } else {
               typeAliasRegistry.registerAlias(alias, clazz);

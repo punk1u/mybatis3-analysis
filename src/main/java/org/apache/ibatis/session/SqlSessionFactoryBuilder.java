@@ -60,6 +60,11 @@ public class SqlSessionFactoryBuilder {
     }
   }
 
+  /**
+   * 根据读取的MyBatis配置文件的输入流对象，构建可生成SqlSession的SqlSessionFactory工厂对象
+   * @param inputStream
+   * @return
+   */
   public SqlSessionFactory build(InputStream inputStream) {
     return build(inputStream, null, null);
   }
@@ -74,7 +79,14 @@ public class SqlSessionFactoryBuilder {
 
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {
+      /**
+       * 解析MyBatis配置文件，生成对应的XMLConfigBuilder，其中存储了MyBatis相关的配置信息
+       */
       XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
+      /**
+       * 先将XMLConfigBuilder解析成存储MyBatis配置信息的Configuration对象，
+       * 再根据这个Configuration对象中存储的详细信息构建工厂对象
+       */
       return build(parser.parse());
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);
