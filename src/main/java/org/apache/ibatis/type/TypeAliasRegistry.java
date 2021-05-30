@@ -160,6 +160,9 @@ public class TypeAliasRegistry {
     if (typeAliases.containsKey(key) && typeAliases.get(key) != null && !typeAliases.get(key).equals(value)) {
       throw new TypeException("The alias '" + alias + "' is already mapped to the value '" + typeAliases.get(key).getName() + "'.");
     }
+    /**
+     * 存储别名的相关信息
+     */
     typeAliases.put(key, value);
   }
 
