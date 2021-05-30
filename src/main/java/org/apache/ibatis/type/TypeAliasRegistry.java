@@ -154,6 +154,7 @@ public class TypeAliasRegistry {
     // issue #748
     /**
      * 统一将别名名称转换为小写（别名不区分大小写）
+     * 所以ResultMap等不区分大小写
      */
     String key = alias.toLowerCase(Locale.ENGLISH);
     if (typeAliases.containsKey(key) && typeAliases.get(key) != null && !typeAliases.get(key).equals(value)) {
