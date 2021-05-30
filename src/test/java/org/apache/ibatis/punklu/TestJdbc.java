@@ -17,7 +17,7 @@ public class TestJdbc {
   }
 
   public static void main(String[] args) throws SQLException {
-    Connection root = DriverManager.getConnection("jdbc:mysql://localhost:3306/test/characterEncoding=utf-8", "root", "123456");
+    Connection root = DriverManager.getConnection("jdbc:mysql://localhost:3306/test", "root", "123456");
     PreparedStatement preparedStatement = root.prepareStatement("select  * from test where id = ?");
     preparedStatement.setString(1,"1");
     ResultSet resultSet = preparedStatement.executeQuery();
