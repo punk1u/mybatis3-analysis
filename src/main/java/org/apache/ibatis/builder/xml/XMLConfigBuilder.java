@@ -131,15 +131,44 @@ public class XMLConfigBuilder extends BaseBuilder {
       pluginElement(root.evalNode("plugins"));
       /**
        * 自定义实例化对象的行为
+       * 比如，MyBatis执行完SQL后，封装返回值对象（例如User对象）时，
+       * 可能会需要赋一些默认值，可以继承ObjectFactory接口的实现类DefaultObjectFactory
+       * 并将这个配置类添加到XML中的<objectFactory>标签中以实现这个效果
        */
       objectFactoryElement(root.evalNode("objectFactory"));
+      /**
+       * objectWrapperFactory和reflectorFactory配合MateObject，
+       * 方便反射操作实体类的对象
+       */
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
+      /**
+       * 解析JDBC相关的环境变量配置信息
+       */
       environmentsElement(root.evalNode("environments"));
+      /**
+       * 解析databaseIdProvider节点的配置信息
+       * mybatis可以根据不同的数据库厂商执行不同的语句,
+       * 这种多厂商的支持是基于映射语句中的databaseId属性.
+       * mybatis会加载不带databaseId属性和带有匹配当前数据库databaseId属性的所有语句.
+       * 如果同时找到带有databaseId和不带databaseId的相同语句,则后者会被舍弃.
+       */
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
+      /**
+       * 解析MyBatis的类型处理器相关的配置
+       * 无论是 MyBatis 在预处理语句（PreparedStatement）中设置一个参数时，
+       * 还是从结果集中取出一个值时，都会用类型处理器将获取的值以合适的方式转换成 Java 类型。
+       * Mybatis默认为我们实现了许多TypeHandler, 当我们没有配置指定TypeHandler时，
+       * Mybatis会根据参数或者返回结果的不同，默认为我们选择合适的TypeHandler处理。
+       *
+       * 这里解析的就是用户自定义的相关TypeHandler的配置
+       */
       typeHandlerElement(root.evalNode("typeHandlers"));
+      /**
+       * 解析mappers节点
+       */
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
@@ -231,6 +260,11 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析ObjectFactory相关的配置信息
+   * @param context
+   * @throws Exception
+   */
   private void objectFactoryElement(XNode context) throws Exception {
     if (context != null) {
       String type = context.getStringAttribute("type");
@@ -333,19 +367,49 @@ public class XMLConfigBuilder extends BaseBuilder {
 
   private void databaseIdProviderElement(XNode context) throws Exception {
     DatabaseIdProvider databaseIdProvider = null;
+    /**
+     * 如果设置了databaseIdProvider节点
+     */
     if (context != null) {
+      /**
+       * 提取type类型
+       */
       String type = context.getStringAttribute("type");
       // awful patch to keep backward compatibility
+      /**
+       * 打一个补丁
+       */
       if ("VENDOR".equals(type)) {
         type = "DB_VENDOR";
       }
+      /**
+       * 获取属性
+       */
       Properties properties = context.getChildrenAsProperties();
+      /**
+       * 构造实例
+       */
       databaseIdProvider = (DatabaseIdProvider) resolveClass(type).getDeclaredConstructor().newInstance();
+      /**
+       * 设置属性
+       */
       databaseIdProvider.setProperties(properties);
     }
+    /**
+     * 提取数据源的对象
+     */
     Environment environment = configuration.getEnvironment();
+    /**
+     * 如果都不为空
+     */
     if (environment != null && databaseIdProvider != null) {
+      /**
+       * 获取到对应的数据库id标识
+       */
       String databaseId = databaseIdProvider.getDatabaseId(environment.getDataSource());
+      /**
+       * 将数据库id设置到存储MyBatis相关配置的Configuration中
+       */
       configuration.setDatabaseId(databaseId);
     }
   }
@@ -402,10 +466,17 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        /**
+         * package节点和mapper节点只能在mappers节点下边同时出现一个
+         * 使用package节点时，会自动扫描这个package下的mapper文件并添加进要使用的Mapper集合中
+         */
         if ("package".equals(child.getName())) {
           String mapperPackage = child.getStringAttribute("name");
           configuration.addMappers(mapperPackage);
         } else {
+          /**
+           * resource节点用于指定要使用的MyBatis SQL XML的全路径名(例如:resources/mapper/MyBatisDemoMapper.xml)
+           */
           String resource = child.getStringAttribute("resource");
           String url = child.getStringAttribute("url");
           String mapperClass = child.getStringAttribute("class");

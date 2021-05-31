@@ -71,7 +71,9 @@ public final class TypeHandlerRegistry {
   }
 
   /**
+   *
    * The constructor that pass the MyBatis configuration.
+   * 会默认注册MyBatis自带的相关TypeHandler的构造方法
    *
    * @param configuration a MyBatis configuration
    * @since 3.5.4

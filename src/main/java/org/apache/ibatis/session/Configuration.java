@@ -148,6 +148,10 @@ public class Configuration {
 
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
   protected final InterceptorChain interceptorChain = new InterceptorChain();
+  /**
+   * 存储TypeHandler相关配置的对象,
+   * TypeHandlerRegistry的构造方法中已经注册了MyBatis自带的多种TypeHandler
+   */
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();

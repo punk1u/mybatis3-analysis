@@ -5,6 +5,10 @@
 
 <configuration>
 
+  <!--<objectFactory type="org.apache.ibatis.punklu.ObjectFactoryUser">
+    &lt;!&ndash;要传给ObjectFactory的属性值&ndash;&gt;
+    <property name="" value=""/>
+  </objectFactory>-->
 
   <!--<objectFactory type="com" >-->
   <!--<property name="" value=""></property>-->
