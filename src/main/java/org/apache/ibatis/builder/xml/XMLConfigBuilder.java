@@ -486,7 +486,13 @@ public class XMLConfigBuilder extends BaseBuilder {
           if (resource != null && url == null && mapperClass == null) {
             ErrorContext.instance().resource(resource);
             try(InputStream inputStream = Resources.getResourceAsStream(resource)) {
+              /**
+               * 解析这个mapper resource中指定的xml mapper文件，将其转换为XMLMapperBuilder对象
+               */
               XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
+              /**
+               * 解析xml文件并检查xml格式正确性
+               */
               mapperParser.parse();
             }
           } else if (resource == null && url != null && mapperClass == null) {

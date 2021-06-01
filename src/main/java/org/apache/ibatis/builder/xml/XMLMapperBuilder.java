@@ -90,15 +90,41 @@ public class XMLMapperBuilder extends BaseBuilder {
     this.resource = resource;
   }
 
+  /**
+   * 解析sql xml文件中的mapper节点并检查xml格式正确性
+   */
   public void parse() {
+    /**
+     * 先判断之前有没有解析过这个mapper文件，如果已经解析过就不再进行解析
+     */
     if (!configuration.isResourceLoaded(resource)) {
+      /**
+       * 解析sql xml文件中的mapper节点，包含mapper节点中指定的namespace，
+       * 以及mapper节点下的select、insert、update、delete操作SQL的节点，
+       * 如果xml格式不正确，会直接抛出异常，终止执行
+       */
       configurationElement(parser.evalNode("/mapper"));
+      /**
+       * 将这个resource表示的mapper文件标记为已加载
+       */
       configuration.addLoadedResource(resource);
+      /**
+       * 绑定namespace和mapper文件的关系
+       */
       bindMapperForNamespace();
     }
 
+    /**
+     * 解析额外的ResultMap节点的信息
+     */
     parsePendingResultMaps();
+    /**
+     * 解析额外的CacheRef节点的信息
+     */
     parsePendingCacheRefs();
+    /**
+     * 解析额外的Statement节点的信息
+     */
     parsePendingStatements();
   }
 
@@ -106,18 +132,37 @@ public class XMLMapperBuilder extends BaseBuilder {
     return sqlFragments.get(refid);
   }
 
+  /**
+   * 解析Mapper文件中的节点
+   * @param context
+   */
   private void configurationElement(XNode context) {
     try {
+      /**
+       * 解析mapper节点上的namespace的值，确定这个mapper文件绑定的MyBatis接口对象
+       */
       String namespace = context.getStringAttribute("namespace");
       if (namespace == null || namespace.isEmpty()) {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
+      /**
+       * 设置namespace
+       */
       builderAssistant.setCurrentNamespace(namespace);
       cacheRefElement(context.evalNode("cache-ref"));
       cacheElement(context.evalNode("cache"));
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      /**
+       * 解析用于定义返回结果的resultMap节点
+       */
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      /**
+       * 解析<sql></sql>节点
+       */
       sqlElement(context.evalNodes("/mapper/sql"));
+      /**
+       * 解析select、insert、update、delete节点
+       */
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
