@@ -64,8 +64,15 @@ public class XMLScriptBuilder extends BaseBuilder {
   }
 
   public SqlSource parseScriptNode() {
+    /**
+     * 判断SQL语句节点是否是动态标签的
+     */
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
     SqlSource sqlSource;
+    /**
+     * 如果parseDynamicTags判断出的isDynamic的值是true，说明是需要动态拼接的，使用DynamicSqlSource
+     * 否则使用RawSqlSource
+     */
     if (isDynamic) {
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
@@ -79,8 +86,14 @@ public class XMLScriptBuilder extends BaseBuilder {
     NodeList children = node.getNode().getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));
+      /**
+       * 如果是 普通sql 则走这个case
+       */
       if (child.getNode().getNodeType() == Node.CDATA_SECTION_NODE || child.getNode().getNodeType() == Node.TEXT_NODE) {
         String data = child.getStringBody("");
+        /**
+         * 这里会去判断是否包含 ${} 来决定到底是那种和类型
+         */
         TextSqlNode textSqlNode = new TextSqlNode(data);
         if (textSqlNode.isDynamic()) {
           contents.add(textSqlNode);
@@ -88,8 +101,14 @@ public class XMLScriptBuilder extends BaseBuilder {
         } else {
           contents.add(new StaticTextSqlNode(data));
         }
+      /**
+       * 如果是标签，则走这里,也就是动态拼接SQL
+       */
       } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628
         String nodeName = child.getNode().getNodeName();
+        /**
+         * 会根据nodeName去拿TypeHandler
+         */
         NodeHandler handler = nodeHandlerMap.get(nodeName);
         if (handler == null) {
           throw new BuilderException("Unknown element <" + nodeName + "> in SQL statement.");

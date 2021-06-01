@@ -53,32 +53,84 @@ public class XMLStatementBuilder extends BaseBuilder {
     this.requiredDatabaseId = databaseId;
   }
 
+  /**
+   * 解析SELECT、INSERT、UPDATE、DELETE节点
+   */
   public void parseStatementNode() {
+    /**
+     * 获得这个SQL的id，与MyBatis接口对象中的方法名对应
+     */
     String id = context.getStringAttribute("id");
+    /**
+     * 获得要连接的数据库id
+     */
     String databaseId = context.getStringAttribute("databaseId");
 
+    /**
+     * 判断自定义的数据库id和当前的数据库id是否一致
+     */
     if (!databaseIdMatchesCurrent(id, databaseId, this.requiredDatabaseId)) {
       return;
     }
 
     String nodeName = context.getNode().getNodeName();
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
+    /**
+     * 判断是否是SELECT节点
+     */
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
+    /**
+     * 是否刷新缓存 默认值：增删改刷新 查询不刷新
+     */
     boolean flushCache = context.getBooleanAttribute("flushCache", !isSelect);
+    /**
+     * 是否使用二级缓存 默认值：查询使用 增删改不使用
+     */
     boolean useCache = context.getBooleanAttribute("useCache", isSelect);
+    /**
+     * 是否需要处理嵌套查询结果 如果有group by语句的时候，设置这个值为true，会分成嵌套的查询结果
+     */
     boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
     // Include Fragments before parsing
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
+    /**
+     * 替换Includes标签为对应的sql标签里面的值
+     */
     includeParser.applyIncludes(context.getNode());
 
+    /**
+     * 解析SQL节点中的parameterType值，用于传入相应的对象数据
+     */
     String parameterType = context.getStringAttribute("parameterType");
+    /**
+     * 获得需要传入的对象的Class类型
+     */
     Class<?> parameterTypeClass = resolveClass(parameterType);
 
+    /**
+     * 解析配置的自定义脚本语言驱动
+     *
+     * 自定义脚本语言驱动可以用来自定义SQL mapper的解析行为，例如，自定义对#{}占位符的解析方式
+     */
     String lang = context.getStringAttribute("lang");
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     // Parse selectKey after includes and remove them.
+    /**
+     * 解析selectKey节点
+     *
+     * selectKey使用示例：
+     * <insert id="insert" parameterType="SysUser" >
+     * < selectKey keyProperty="id" order="BEFORE" resultType="java.lang.string">
+     *     select uuid()
+     * </selectKey>
+     * insert into sys_user
+     *     (id,  name, email, phone)
+     * values
+     *     (#{id},#{name},#{email},#{phone})
+     * </insert>
+     */
     processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
     // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
@@ -93,6 +145,10 @@ public class XMLStatementBuilder extends BaseBuilder {
           ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
+    /**
+     * 解析SQL 根据SQL文本来判断是否需要动态解析 如果没有动态SQL语句且只有#{}的时候，直接静态解析使用?占位
+     * 当有${}时就不解析了，后边调用时再解析
+     */
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
     StatementType statementType = StatementType.valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
     Integer fetchSize = context.getIntAttribute("fetchSize");
