@@ -151,6 +151,9 @@ public class XMLMapperBuilder extends BaseBuilder {
       builderAssistant.setCurrentNamespace(namespace);
       cacheRefElement(context.evalNode("cache-ref"));
       cacheElement(context.evalNode("cache"));
+      /**
+       * 解析parameterMap节点
+       */
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
       /**
        * 解析用于定义返回结果的resultMap节点
@@ -261,8 +264,17 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void parameterMapElement(List<XNode> list) {
     for (XNode parameterMapNode : list) {
+      /**
+       * 获得parameterMap节点的id标识符
+       */
       String id = parameterMapNode.getStringAttribute("id");
+      /**
+       * 取得所指向的Class类对象的全路径名
+       */
       String type = parameterMapNode.getStringAttribute("type");
+      /**
+       * 获得所指向的Class对象
+       */
       Class<?> parameterClass = resolveClass(type);
       List<XNode> parameterNodes = parameterMapNode.evalNodes("parameter");
       List<ParameterMapping> parameterMappings = new ArrayList<>();

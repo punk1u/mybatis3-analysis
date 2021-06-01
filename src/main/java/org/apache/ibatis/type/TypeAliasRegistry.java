@@ -110,6 +110,10 @@ public class TypeAliasRegistry {
       // issue #748
       String key = string.toLowerCase(Locale.ENGLISH);
       Class<T> value;
+      /**
+       * 如果为这个Class对象设置了别名，则从别名中获取，如果没有设置别名，
+       * 则直接获取
+       */
       if (typeAliases.containsKey(key)) {
         value = (Class<T>) typeAliases.get(key);
       } else {
