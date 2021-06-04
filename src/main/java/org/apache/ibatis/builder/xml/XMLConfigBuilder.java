@@ -117,8 +117,17 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void parseConfiguration(XNode root) {
     try {
       // issue #117 read properties first
+      /**
+       * 解析 properties 配置
+       */
       propertiesElement(root.evalNode("properties"));
+      /**
+       * 解析settings配置，并将其转换为Properties对象
+       */
       Properties settings = settingsAsProperties(root.evalNode("settings"));
+      /**
+       * 加载vfs
+       */
       loadCustomVfs(settings);
       loadCustomLogImpl(settings);
       /**
@@ -141,7 +150,13 @@ public class XMLConfigBuilder extends BaseBuilder {
        * 方便反射操作实体类的对象
        */
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
+      /**
+       * 解析 reflectorFactory 配置
+       */
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
+      /**
+       * settings 中的信息设置到 Configuration 对象中
+       */
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
       /**
@@ -293,15 +308,30 @@ public class XMLConfigBuilder extends BaseBuilder {
 
   private void propertiesElement(XNode context) throws Exception {
     if (context != null) {
+      /**
+       * 解析 propertis 的子节点，并将这些节点内容转换为属性对象 Properties
+       */
       Properties defaults = context.getChildrenAsProperties();
+      /**
+       * 获取 propertis 节点中的 resource 和 url 属性值
+       */
       String resource = context.getStringAttribute("resource");
       String url = context.getStringAttribute("url");
+      /**
+       * resource和url的值只能存在一个，都存在直接报错
+       */
       if (resource != null && url != null) {
         throw new BuilderException("The properties element cannot specify both a URL and a resource based property file reference.  Please specify one or the other.");
       }
       if (resource != null) {
+        /**
+         * 从文件系统中加载并解析属性文件
+         */
         defaults.putAll(Resources.getResourceAsProperties(resource));
       } else if (url != null) {
+        /**
+         * 通过 url 加载并解析属性文件
+         */
         defaults.putAll(Resources.getUrlAsProperties(url));
       }
       Properties vars = configuration.getVariables();
@@ -309,6 +339,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         defaults.putAll(vars);
       }
       parser.setVariables(defaults);
+      /**
+       * 将属性值设置到 configuration 中
+       */
       configuration.setVariables(defaults);
     }
   }
