@@ -123,6 +123,10 @@ public class XMLConfigBuilder extends BaseBuilder {
       propertiesElement(root.evalNode("properties"));
       /**
        * 解析settings配置，并将其转换为Properties对象
+       * <settings>相关配置是MyBatis中非常重要的配置，这些配置用于调整MyBatis运行时的行为。
+       *
+       * mybatis官网对<settings>节点可选项的文档：
+       * https://mybatis.org/mybatis-3/zh/configuration.html#settings
        */
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       /**
@@ -194,10 +198,19 @@ public class XMLConfigBuilder extends BaseBuilder {
     if (context == null) {
       return new Properties();
     }
+    /**
+     * 获取<settings>节点下的子节点的内容
+     */
     Properties props = context.getChildrenAsProperties();
     // Check that all settings are known to the configuration class
+    /**
+     * 创建Configuration类的"元信息"对象
+     */
     MetaClass metaConfig = MetaClass.forClass(Configuration.class, localReflectorFactory);
     for (Object key : props.keySet()) {
+      /**
+       * 检测Configuration中是否存在相关属性，不存在则抛出异常
+       */
       if (!metaConfig.hasSetter(String.valueOf(key))) {
         throw new BuilderException("The setting " + key + " is not known.  Make sure you spelled it correctly (case sensitive).");
       }
