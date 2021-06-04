@@ -309,11 +309,11 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void propertiesElement(XNode context) throws Exception {
     if (context != null) {
       /**
-       * 解析 propertis 的子节点，并将这些节点内容转换为属性对象 Properties
+       * 解析 properties 的子节点，并将这些节点内容转换为属性对象 Properties
        */
       Properties defaults = context.getChildrenAsProperties();
       /**
-       * 获取 propertis 节点中的 resource 和 url 属性值
+       * 获取 properties 节点中的 resource 和 url 属性值
        */
       String resource = context.getStringAttribute("resource");
       String url = context.getStringAttribute("url");
@@ -323,6 +323,11 @@ public class XMLConfigBuilder extends BaseBuilder {
       if (resource != null && url != null) {
         throw new BuilderException("The properties element cannot specify both a URL and a resource based property file reference.  Please specify one or the other.");
       }
+      /**
+       * 因为上面的Properties defaults = context.getChildrenAsProperties();这行代码会先解析
+       * <properties>节点下的子节点的内容，所以下面的从文件系统或网络读取的属性配置，会覆盖掉
+       * <properties>节点下的同名的属性和值
+       */
       if (resource != null) {
         /**
          * 从文件系统中加载并解析属性文件
