@@ -207,6 +207,9 @@ public class XMLConfigBuilder extends BaseBuilder {
      * 创建Configuration类的"元信息"对象
      */
     MetaClass metaConfig = MetaClass.forClass(Configuration.class, localReflectorFactory);
+    /**
+     * 通过MetaClass检测Configuration中是否存在某个属性的setter方法，不存在则抛出异常
+     */
     for (Object key : props.keySet()) {
       /**
        * 检测Configuration中是否存在相关属性，不存在则抛出异常

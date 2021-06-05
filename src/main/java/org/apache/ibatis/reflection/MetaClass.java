@@ -27,6 +27,7 @@ import org.apache.ibatis.reflection.invoker.MethodInvoker;
 import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
+ * 用来解析目标类的一些元信息，比如类的成员变量,getter/setter方法
  * @author Clinton Begin
  */
 public class MetaClass {
@@ -36,6 +37,9 @@ public class MetaClass {
 
   private MetaClass(Class<?> type, ReflectorFactory reflectorFactory) {
     this.reflectorFactory = reflectorFactory;
+    /**
+     * 根据类型创建 Reflector
+     */
     this.reflector = reflectorFactory.findForClass(type);
   }
 
@@ -132,7 +136,15 @@ public class MetaClass {
     return null;
   }
 
+  /**
+   * 判断字段是否包含setter方法
+   * @param name
+   * @return
+   */
   public boolean hasSetter(String name) {
+    /**
+     * 属性名分词器，用于处理较为复杂的属性名
+     */
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
       if (reflector.hasSetter(prop.getName())) {
