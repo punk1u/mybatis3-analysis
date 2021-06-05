@@ -639,12 +639,21 @@ public class XMLConfigBuilder extends BaseBuilder {
                */
               mapperParser.parse();
             }
+            /**
+             * url 不为空，且其他两者为空，则通过 url 加载配置
+             */
           } else if (resource == null && url != null && mapperClass == null) {
             ErrorContext.instance().resource(url);
             try(InputStream inputStream = Resources.getUrlAsStream(url)){
               XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, url, configuration.getSqlFragments());
+              /**
+               * 解析映射文件
+               */
               mapperParser.parse();
             }
+            /**
+             * mapperClass 不为空，且其他两者为空，则通过 mapperClass 解析映射配置
+             */
           } else if (resource == null && url == null && mapperClass != null) {
             Class<?> mapperInterface = Resources.classForName(mapperClass);
             configuration.addMapper(mapperInterface);
