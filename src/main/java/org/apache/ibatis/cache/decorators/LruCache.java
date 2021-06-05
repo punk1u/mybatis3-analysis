@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.ibatis.cache.Cache;
 
 /**
+ * Lru（最近最少使用）缓存装饰器
  * Lru (least recently used) cache decorator.
  *
  * @author Clinton Begin

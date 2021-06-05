@@ -149,7 +149,53 @@ public class XMLMapperBuilder extends BaseBuilder {
        * 设置namespace
        */
       builderAssistant.setCurrentNamespace(namespace);
+      /**
+       * 解析 <cache-ref> 节点
+       * 在 MyBatis 中，二级缓存是可以共用的。
+       * 这需要通过<cache-ref>节点为命名空间配置参照缓存,比如像下面这样:
+       *
+       * 第一个mapper文件
+       * <mapper namespace="tech.punklu.dao.Mapper1">
+       *    <cache-ref namespace="tech.punklu.dao.Mapper2"/>
+       * </mapper>
+       *
+       * 第二个配置文件：
+       * <mapper namespace="tech.punklu.dao.Mapper2">
+       *     <cache/>
+       * </mapper>
+       * 就实现了两个mapper文件共享二级缓存
+       */
       cacheRefElement(context.evalNode("cache-ref"));
+      /**
+       * 解析 <cache> 节点
+       * MyBatis 提供了一、二级缓存，其中一级缓存是 SqlSession 级别的，默认为开启状态。
+       * 二级缓存配置在映射文件中，使用者需要显示配置才能开启。如果无特殊要求，二级缓存的
+       * 配置很简单。如下：
+       * <cache/>
+       *
+       * 如果想修改缓存的一些属性，可以像下面这样配置:
+       * <cache
+       *  eviction="FIFO"
+       *  flushInterval="60000"
+       *  size="512"
+       *  readOnly="true"/>
+       *
+       * 根据上面的配置创建出的缓存有以下特点：
+       * 1. 按先进先出的策略淘汰缓存项
+       * 2. 缓存的容量为 512 个对象引用
+       * 3. 缓存每隔 60 秒刷新一次
+       * 4. 缓存返回的对象是写安全的，即在外部修改对象不会影响到缓存内部存储对象
+       *
+       * 除了上面两种配置方式，还可以给 MyBatis 配置第三方缓存或者自己实现的缓存等。
+       * 比如，将 Ehcache 缓存整合到 MyBatis 中，可以这样配置:
+       * <cache type="org.mybatis.caches.ehcache.EhcacheCache"/>
+       *    <property name="timeToIdleSeconds" value="3600"/>
+       *    <property name="timeToLiveSeconds" value="3600"/>
+       *    <property name="maxEntriesLocalHeap" value="1000"/>
+       *    <property name="maxEntriesLocalDisk" value="10000000"/>
+       *    <property name="memoryStoreEvictionPolicy" value="LRU"/>
+       * </cache>
+       */
       cacheElement(context.evalNode("cache"));
       /**
        * 解析parameterMap节点
@@ -235,6 +281,10 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析二级缓存相关的配置
+   * @param context
+   */
   private void cacheRefElement(XNode context) {
     if (context != null) {
       configuration.addCacheRef(builderAssistant.getCurrentNamespace(), context.getStringAttribute("namespace"));
@@ -249,6 +299,9 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void cacheElement(XNode context) {
     if (context != null) {
+      /**
+       * 获取各种属性，如果属性值未在配置文件中显式设置的话，使用第二个参数作为默认值
+       */
       String type = context.getStringAttribute("type", "PERPETUAL");
       Class<? extends Cache> typeClass = typeAliasRegistry.resolveAlias(type);
       String eviction = context.getStringAttribute("eviction", "LRU");
@@ -257,7 +310,13 @@ public class XMLMapperBuilder extends BaseBuilder {
       Integer size = context.getIntAttribute("size");
       boolean readWrite = !context.getBooleanAttribute("readOnly", false);
       boolean blocking = context.getBooleanAttribute("blocking", false);
+      /**
+       * 获取子节点配置
+       */
       Properties props = context.getChildrenAsProperties();
+      /**
+       * 构建缓存对象
+       */
       builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);
     }
   }

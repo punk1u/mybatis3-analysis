@@ -128,6 +128,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean readWrite,
       boolean blocking,
       Properties props) {
+    /**
+     * 使用建造模式构建缓存实例
+     */
     Cache cache = new CacheBuilder(currentNamespace)
         .implementation(valueOrDefault(typeClass, PerpetualCache.class))
         .addDecorator(valueOrDefault(evictionClass, LruCache.class))
@@ -137,7 +140,13 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .blocking(blocking)
         .properties(props)
         .build();
+    /**
+     * 添加缓存到 Configuration 对象中
+     */
     configuration.addCache(cache);
+    /**
+     * 设置 currentCache 遍历，即当前使用的缓存
+     */
     currentCache = cache;
     return cache;
   }
