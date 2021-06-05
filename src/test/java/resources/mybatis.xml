@@ -34,5 +34,24 @@
     <mapper resource="resources/mapper/MyBatisDemoMapper.xml"  ></mapper>
   </mappers>
 
+  <!--<plugins>
+    <plugin interceptor="tech.punklu.mybatis.ExamplePlugin">
+      <property name="key" value="value"/>
+    </plugin>
+  </plugins>-->
+
+  <!--自定义的TypeHandler需要实现TypeHandler接口并在这里注册-->
+  <!-- 自动扫描 -->
+  <!--<typeHandlers>
+    <package name="tech.punklu.handlers"/>
+  </typeHandlers>-->
+  <!-- 手动配置 -->
+  <!--<typeHandlers>
+    <typeHandler jdbcType="TINYINT"
+                 javaType="tech.punklu.ArticleTypeEnum"
+                 handler="tech.punklu.ArticleTypeHandler"/>
+  </typeHandlers>-->
+
+
 </configuration>
 

@@ -253,6 +253,14 @@ public class Reflector {
     }
   }
 
+  /**
+   * 解决setter方法的冲突，解决规则：
+   * 1. 冲突方法的参数类型与 getter 的返回类型一致，则认为是最好的选择
+   * 2. 冲突方法的参数类型具有继承关系，子类参数对应的方法被认为是更合适的选择
+   * 3. 冲突方法的参数类型不相关，无法确定哪个是更好的选择，此时直接抛异常
+   *
+   * @param conflictingSetters
+   */
   private void resolveSetterConflicts(Map<String, List<Method>> conflictingSetters) {
     for (Entry<String, List<Method>> entry : conflictingSetters.entrySet()) {
       String propName = entry.getKey();
@@ -291,14 +299,28 @@ public class Reflector {
     }
   }
 
+  /**
+   * 从两个 setter 方法中选择一个更为合适方法
+   * @param setter1
+   * @param setter2
+   * @param property
+   * @return
+   */
   private Method pickBetterSetter(Method setter1, Method setter2, String property) {
     if (setter1 == null) {
       return setter2;
     }
     Class<?> paramType1 = setter1.getParameterTypes()[0];
     Class<?> paramType2 = setter2.getParameterTypes()[0];
+    /**
+     * 如果参数 2 可赋值给参数 1，即参数 2 是参数 1 的子类，
+     * 则认为参数 2 对应的 setter 方法更为合适
+     */
     if (paramType1.isAssignableFrom(paramType2)) {
       return setter2;
+      /**
+       * 这里和上面情况相反
+       */
     } else if (paramType2.isAssignableFrom(paramType1)) {
       return setter1;
     }
@@ -312,10 +334,17 @@ public class Reflector {
     return null;
   }
 
+
   private void addSetMethod(String name, Method method) {
     MethodInvoker invoker = new MethodInvoker(method);
     setMethods.put(name, invoker);
+    /**
+     * 解析参数类型列表
+     */
     Type[] paramTypes = TypeParameterResolver.resolveParamTypes(method, type);
+    /**
+     * 将参数类型由 Type 转为 Class，并将转换后的结果缓存到 setTypes
+     */
     setTypes.put(name, typeToClass(paramTypes[0]));
   }
 
@@ -541,6 +570,7 @@ public class Reflector {
   }
 
   /**
+   * 检查当前Reflector表示的目标类是否具有指定名称的可写属性
    * Check to see if a class has a writable property by name.
    *
    * @param propertyName - the name of the property to check

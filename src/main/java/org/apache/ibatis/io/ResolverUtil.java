@@ -231,6 +231,9 @@ public class ResolverUtil<T> {
   }
 
   /**
+   * 从提供的包开始扫描类，然后向下扫描到子包。每个类在被发现时都会被提供给测试，
+   * 如果测试返回true，则会保留该类。累积类可以通过调用{@link #getClasses（）}来获取。
+   *
    * Scans for classes starting at the package provided and descending into subpackages.
    * Each class is offered up to the Test as it is discovered, and if the Test returns
    * true the class is retained.  Accumulated classes can be fetched by calling
@@ -245,9 +248,15 @@ public class ResolverUtil<T> {
   public ResolverUtil<T> find(Test test, String packageName) {
     String path = getPackagePath(packageName);
 
+    /**
+     * 通过 VFS（虚拟文件系统）获取指定包下的所有文件的路径名
+     */
     try {
       List<String> children = VFS.getInstance().list(path);
       for (String child : children) {
+        /**
+         * 筛选以.class 结尾的文件名
+         */
         if (child.endsWith(".class")) {
           addIfMatching(test, child);
         }
@@ -272,6 +281,8 @@ public class ResolverUtil<T> {
   }
 
   /**
+   * 将由提供的完全限定类名指定的类添加到已解析的类集合中，当且仅当它被提供的测试批准时。
+   *
    * Add the class designated by the fully qualified class name provided to the set of
    * resolved classes if and only if it is approved by the Test supplied.
    *

@@ -159,12 +159,13 @@ public class XMLConfigBuilder extends BaseBuilder {
        */
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
       /**
-       * settings 中的信息设置到 Configuration 对象中
+       * <settings> 中的信息设置到 Configuration 对象中
        */
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
       /**
        * 解析JDBC相关的环境变量配置信息
+       * 事务管理器和数据源配置在<environments>节点中
        */
       environmentsElement(root.evalNode("environments"));
       /**
@@ -279,13 +280,44 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析有关插件的配置
+   *
+   * 插件是 MyBatis 提供的一个拓展机制，通过插件机制我们可在 SQL 执行过程中的某些
+   * 点上做一些自定义操作。实现一个插件需要比简单，首先需要让插件类实现 Interceptor
+   * 接口。然后在插件类上添加@Intercepts 和@Signature 注解，用于指定想要拦截的目标
+   * 方法。MyBatis 允许拦截下面接口中的一些方法：
+   * Executor:
+   *      update，query，flushStatements，commit，rollback，getTransaction，close，isClosed
+   * ParameterHandler:
+   *      getParameterObject，setParameters
+   * ResultSetHandler:
+   *      handleResultSets，handleOutputParameters
+   * StatementHandler:
+   *      prepare，parameterize，batch，update，query
+   *
+   * @param parent
+   * @throws Exception
+   */
   private void pluginElement(XNode parent) throws Exception {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
         String interceptor = child.getStringAttribute("interceptor");
+        /**
+         * 获取配置信息
+         */
         Properties properties = child.getChildrenAsProperties();
+        /**
+         * 解析拦截器的类型，并创建拦截器
+         */
         Interceptor interceptorInstance = (Interceptor) resolveClass(interceptor).getDeclaredConstructor().newInstance();
+        /**
+         * 设置属性
+         */
         interceptorInstance.setProperties(properties);
+        /**
+         * 添加拦截器到Configuration中
+         */
         configuration.addInterceptor(interceptorInstance);
       }
     }
@@ -368,8 +400,14 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   private void settingsElement(Properties props) {
+    /**
+     * 设置 autoMappingBehavior 属性，默认值为 PARTIAL
+     */
     configuration.setAutoMappingBehavior(AutoMappingBehavior.valueOf(props.getProperty("autoMappingBehavior", "PARTIAL")));
     configuration.setAutoMappingUnknownColumnBehavior(AutoMappingUnknownColumnBehavior.valueOf(props.getProperty("autoMappingUnknownColumnBehavior", "NONE")));
+    /**
+     * 设置 cacheEnabled 属性，默认值为 true
+     */
     configuration.setCacheEnabled(booleanValueOf(props.getProperty("cacheEnabled"), true));
     configuration.setProxyFactory((ProxyFactory) createInstance(props.getProperty("proxyFactory")));
     configuration.setLazyLoadingEnabled(booleanValueOf(props.getProperty("lazyLoadingEnabled"), false));
@@ -388,6 +426,9 @@ public class XMLConfigBuilder extends BaseBuilder {
     configuration.setLazyLoadTriggerMethods(stringSetValueOf(props.getProperty("lazyLoadTriggerMethods"), "equals,clone,hashCode,toString"));
     configuration.setSafeResultHandlerEnabled(booleanValueOf(props.getProperty("safeResultHandlerEnabled"), true));
     configuration.setDefaultScriptingLanguage(resolveClass(props.getProperty("defaultScriptingLanguage")));
+    /**
+     * 解析并设置默认的枚举处理器
+     */
     configuration.setDefaultEnumTypeHandler(resolveClass(props.getProperty("defaultEnumTypeHandler")));
     configuration.setCallSettersOnNulls(booleanValueOf(props.getProperty("callSettersOnNulls"), false));
     configuration.setUseActualParamName(booleanValueOf(props.getProperty("useActualParamName"), true));
@@ -401,17 +442,39 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void environmentsElement(XNode context) throws Exception {
     if (context != null) {
       if (environment == null) {
+        /**
+         * 获取default属性
+         */
         environment = context.getStringAttribute("default");
       }
       for (XNode child : context.getChildren()) {
+        /**
+         * 获取 id 属性
+         */
         String id = child.getStringAttribute("id");
+        /**
+         * 检测当前 environment 节点的 id 与其父节点 environments 的
+         * 属性 default 内容是否一致，一致则返回 true，否则返回 false
+         */
         if (isSpecifiedEnvironment(id)) {
+          /**
+           * 解析transactionManager节点
+           */
           TransactionFactory txFactory = transactionManagerElement(child.evalNode("transactionManager"));
+          /**
+           * 解析 dataSource节点，逻辑和插件的解析逻辑很相似，找到DataSourceFactory类型的数据源工厂实现类
+           */
           DataSourceFactory dsFactory = dataSourceElement(child.evalNode("dataSource"));
+          /**
+           * 从数据源工厂中获取数据源
+           */
           DataSource dataSource = dsFactory.getDataSource();
           Environment.Builder environmentBuilder = new Environment.Builder(id)
               .transactionFactory(txFactory)
               .dataSource(dataSource);
+          /**
+           * 构建Environment对象，并设置到Configuration中
+           */
           configuration.setEnvironment(environmentBuilder.build());
           break;
         }
@@ -493,20 +556,47 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void typeHandlerElement(XNode parent) {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
+        /**
+         * 从指定的包中注册TypeHandler
+         */
         if ("package".equals(child.getName())) {
           String typeHandlerPackage = child.getStringAttribute("name");
+          /**
+           * 注册方法
+           */
           typeHandlerRegistry.register(typeHandlerPackage);
         } else {
+          /**
+           * 获取这个TypeHandler要使用的java类型
+           */
           String javaTypeName = child.getStringAttribute("javaType");
+          /**
+           * 获取这个TypeHandler所针对的jdbc数据类型
+           */
           String jdbcTypeName = child.getStringAttribute("jdbcType");
+          /**
+           * 获取这个TypeHandler的实现类对象路径名
+           */
           String handlerTypeName = child.getStringAttribute("handler");
+          /**
+           * 解析上面获取到的属性值
+           */
           Class<?> javaTypeClass = resolveClass(javaTypeName);
           JdbcType jdbcType = resolveJdbcType(jdbcTypeName);
           Class<?> typeHandlerClass = resolveClass(handlerTypeName);
+          /**
+           * 根据 javaTypeClass 和 jdbcType 值的情况进行不同的注册策略
+           */
           if (javaTypeClass != null) {
             if (jdbcType == null) {
+              /**
+               * 注册TypeHandler
+               */
               typeHandlerRegistry.register(javaTypeClass, typeHandlerClass);
             } else {
+              /**
+               * 注册TypeHandler
+               */
               typeHandlerRegistry.register(javaTypeClass, jdbcType, typeHandlerClass);
             }
           } else {
