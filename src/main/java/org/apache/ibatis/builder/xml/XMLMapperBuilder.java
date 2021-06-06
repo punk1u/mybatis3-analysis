@@ -372,8 +372,14 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void resultMapElements(List<XNode> list) {
+    /**
+     * 遍历<resultMap>节点列表
+     */
     for (XNode resultMapNode : list) {
       try {
+        /**
+         * 解析resultMap节点
+         */
         resultMapElement(resultMapNode);
       } catch (IncompleteElementException e) {
         // ignore, it will be retried
@@ -387,38 +393,87 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private ResultMap resultMapElement(XNode resultMapNode, List<ResultMapping> additionalResultMappings, Class<?> enclosingType) {
     ErrorContext.instance().activity("processing " + resultMapNode.getValueBasedIdentifier());
+    /**
+     * 获取resultMap的type属性的值
+     */
     String type = resultMapNode.getStringAttribute("type",
         resultMapNode.getStringAttribute("ofType",
             resultMapNode.getStringAttribute("resultType",
                 resultMapNode.getStringAttribute("javaType"))));
+    /**
+     * 解析type属性对应的类的类型
+     */
     Class<?> typeClass = resolveClass(type);
     if (typeClass == null) {
       typeClass = inheritEnclosingType(resultMapNode, enclosingType);
     }
     Discriminator discriminator = null;
     List<ResultMapping> resultMappings = new ArrayList<>(additionalResultMappings);
+    /**
+     * 获取并便利<resultMap>的子节点列表
+     */
     List<XNode> resultChildren = resultMapNode.getChildren();
     for (XNode resultChild : resultChildren) {
       if ("constructor".equals(resultChild.getName())) {
+        /**
+         * 解析constructor节点，并生成对应的ResultMapping
+         * 一般情况下，定义的实体类都是简单的Java对象，即POJO。
+         * 这种对象包含一些私有属性和相应的 getter/setter 方法，
+         * 通常这种 POJO 可以满足大部分需求。但如果你想使用
+         * 不可变类存储查询结果，则就需要做一些改动。比如把 POJO 的 setter 方法移除，
+         * 增加构造方法用于初始化成员变量。对于这种不可变的 Java 类，
+         * 需要通过带有参数的构造方法进行初始化（反射也可以达到同样目的）
+         *
+         * 例子:
+         * <resultMap>
+         *   <constructor>
+         *      <idArg column="id" name="id"/>
+         *      <arg column="title" name="title"/>
+         *      <arg column="content" name="content"/>
+         *   </constructor>
+         * </resultMap>
+         */
         processConstructorElement(resultChild, typeClass, resultMappings);
       } else if ("discriminator".equals(resultChild.getName())) {
+        /**
+         * 解析discriminator节点
+         */
         discriminator = processDiscriminatorElement(resultChild, typeClass, resultMappings);
       } else {
         List<ResultFlag> flags = new ArrayList<>();
         if ("id".equals(resultChild.getName())) {
+          /**
+           * 添加ID到flags集合中
+           */
           flags.add(ResultFlag.ID);
         }
+        /**
+         * 解析id和property节点，并生成对应的ResultMapping
+         */
         resultMappings.add(buildResultMappingFromContext(resultChild, typeClass, flags));
       }
     }
+    /**
+     * 获取resultMap中的id属性的值
+     */
     String id = resultMapNode.getStringAttribute("id",
             resultMapNode.getValueBasedIdentifier());
+    /**
+     * 获取extends和autoMapping属性
+     */
     String extend = resultMapNode.getStringAttribute("extends");
     Boolean autoMapping = resultMapNode.getBooleanAttribute("autoMapping");
     ResultMapResolver resultMapResolver = new ResultMapResolver(builderAssistant, id, typeClass, extend, discriminator, resultMappings, autoMapping);
     try {
+      /**
+       * 根据前面获取到的信息构建resultMap对象
+       */
       return resultMapResolver.resolve();
     } catch (IncompleteElementException e) {
+      /**
+       * 如果发生IncompleteElementException异常，
+       * 将resultMapResolver添加到incompleteResultMaps集合中
+       */
       configuration.addIncompleteResultMap(resultMapResolver);
       throw e;
     }
@@ -437,14 +492,38 @@ public class XMLMapperBuilder extends BaseBuilder {
     return null;
   }
 
+  /**
+   * <resultMap>
+   *   <constructor>
+   *      <idArg column="id" name="id"/>
+   *      <arg column="title" name="title"/>
+   *      <arg column="content" name="content"/>
+   *   </constructor>
+   * </resultMap>
+   * @param resultChild
+   * @param resultType
+   * @param resultMappings
+   */
   private void processConstructorElement(XNode resultChild, Class<?> resultType, List<ResultMapping> resultMappings) {
+    /**
+     * 获取子节点列表
+     */
     List<XNode> argChildren = resultChild.getChildren();
     for (XNode argChild : argChildren) {
       List<ResultFlag> flags = new ArrayList<>();
+      /**
+       * 向 flags 中添加 CONSTRUCTOR 标志
+       */
       flags.add(ResultFlag.CONSTRUCTOR);
       if ("idArg".equals(argChild.getName())) {
+        /**
+         * 向 flags 中添加 ID 标志
+         */
         flags.add(ResultFlag.ID);
       }
+      /**
+       * 构建 ResultMapping
+       */
       resultMappings.add(buildResultMappingFromContext(argChild, resultType, flags));
     }
   }
@@ -499,17 +578,40 @@ public class XMLMapperBuilder extends BaseBuilder {
     return context.getStringAttribute("databaseId") == null;
   }
 
+  /**
+   * 构建ResultMapping对象
+   * resultMap对象的使用示例：
+   * <resultMap id="articleResult" type="Article">
+   *    <id property="id" column="id"/>
+   *    <result property="title" column="article_title"/>
+   * </resultMap>
+   *
+   * @param context
+   * @param resultType
+   * @param flags
+   * @return
+   */
   private ResultMapping buildResultMappingFromContext(XNode context, Class<?> resultType, List<ResultFlag> flags) {
     String property;
+    /**
+     * 根据节点类型获取name或property属性
+     */
     if (flags.contains(ResultFlag.CONSTRUCTOR)) {
       property = context.getStringAttribute("name");
     } else {
       property = context.getStringAttribute("property");
     }
+    /**
+     * 获取其他各种属性
+     */
     String column = context.getStringAttribute("column");
     String javaType = context.getStringAttribute("javaType");
     String jdbcType = context.getStringAttribute("jdbcType");
     String nestedSelect = context.getStringAttribute("select");
+    /**
+     * 解析resultMap属性，该属性出现在<association>和<collection>节点中
+     * 若这两个节点包含resultMap属性，则调用processNestedResultMappings方法解析嵌套resultMap
+     */
     String nestedResultMap = context.getStringAttribute("resultMap", () ->
         processNestedResultMappings(context, Collections.emptyList(), resultType));
     String notNullColumn = context.getStringAttribute("notNullColumn");
@@ -518,16 +620,33 @@ public class XMLMapperBuilder extends BaseBuilder {
     String resultSet = context.getStringAttribute("resultSet");
     String foreignColumn = context.getStringAttribute("foreignColumn");
     boolean lazy = "lazy".equals(context.getStringAttribute("fetchType", configuration.isLazyLoadingEnabled() ? "lazy" : "eager"));
+    /**
+     * 解析javaType、typeHandler的类型以及枚举类型JdbcType
+     */
     Class<?> javaTypeClass = resolveClass(javaType);
     Class<? extends TypeHandler<?>> typeHandlerClass = resolveClass(typeHandler);
     JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
+    /**
+     * 构建ResultMapping对象
+     */
     return builderAssistant.buildResultMapping(resultType, property, column, javaTypeClass, jdbcTypeEnum, nestedSelect, nestedResultMap, notNullColumn, columnPrefix, typeHandlerClass, flags, resultSet, foreignColumn, lazy);
   }
 
+  /**
+   * 解析resultMap属性，该属性出现在<association>和<collection>节点中
+   * 若这两个节点包含resultMap属性，则调用processNestedResultMappings方法解析嵌套resultMap
+   * @param context
+   * @param resultMappings
+   * @param enclosingType
+   * @return
+   */
   private String processNestedResultMappings(XNode context, List<ResultMapping> resultMappings, Class<?> enclosingType) {
     if (Arrays.asList("association", "collection", "case").contains(context.getName())
         && context.getStringAttribute("select") == null) {
       validateCollection(context, enclosingType);
+      /**
+       * resultMapElement是解析ResultMap入口方法
+       */
       ResultMap resultMap = resultMapElement(context, resultMappings, enclosingType);
       return resultMap.getId();
     }

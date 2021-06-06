@@ -136,6 +136,9 @@ public class ResultMapping {
       // lock down collections
       resultMapping.flags = Collections.unmodifiableList(resultMapping.flags);
       resultMapping.composites = Collections.unmodifiableList(resultMapping.composites);
+      /**
+       * 从 TypeHandlerRegistry 中获取相应 TypeHandler
+       */
       resolveTypeHandler();
       validate();
       return resultMapping;

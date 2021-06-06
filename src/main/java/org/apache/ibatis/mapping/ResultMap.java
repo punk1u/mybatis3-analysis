@@ -90,6 +90,10 @@ public class ResultMap {
       resultMap.propertyResultMappings = new ArrayList<>();
       final List<String> constructorArgNames = new ArrayList<>();
       for (ResultMapping resultMapping : resultMap.resultMappings) {
+        /**
+         * 检测 <association> 或 <collection> 节点
+         * 是否包含 select 和 resultMap 属性
+         */
         resultMap.hasNestedQueries = resultMap.hasNestedQueries || resultMapping.getNestedQueryId() != null;
         resultMap.hasNestedResultMaps = resultMap.hasNestedResultMaps || (resultMapping.getNestedResultMapId() != null && resultMapping.getResultSet() == null);
         final String column = resultMapping.getColumn();
@@ -103,19 +107,37 @@ public class ResultMap {
             }
           }
         }
+        /**
+         * 添加属性 property 到 mappedProperties 集合中
+         */
         final String property = resultMapping.getProperty();
         if (property != null) {
           resultMap.mappedProperties.add(property);
         }
+        /**
+         * 检测当前 resultMapping 是否包含 CONSTRUCTOR 标志
+         */
         if (resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR)) {
+          /**
+           * 添加 resultMapping 到 constructorResultMappings 中
+           */
           resultMap.constructorResultMappings.add(resultMapping);
+          /**
+           * 添加属性（constructor 节点的 name 属性）到 constructorArgNames 中
+           */
           if (resultMapping.getProperty() != null) {
             constructorArgNames.add(resultMapping.getProperty());
           }
         } else {
+          /**
+           * 添加 resultMapping 到 propertyResultMappings 中
+           */
           resultMap.propertyResultMappings.add(resultMapping);
         }
         if (resultMapping.getFlags().contains(ResultFlag.ID)) {
+          /**
+           * 添加 resultMapping 到 idResultMappings 中
+           */
           resultMap.idResultMappings.add(resultMapping);
         }
       }
