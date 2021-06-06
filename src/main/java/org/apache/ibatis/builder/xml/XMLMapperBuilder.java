@@ -546,30 +546,71 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void sqlElement(List<XNode> list) {
+    /**
+     * 如果 Configuration 的 databaseId 不为空，sqlElement 方法
+     * 会被调用了两次。第一次传入具体的 databaseId，用于解析带有 databaseId 属性，且属性值与
+     * 此相等的<sql>节点。第二次传入的 databaseId 为空，用于解析未配置 databaseId 属性的<sql>节点。
+     */
     if (configuration.getDatabaseId() != null) {
+      /**
+       * 调用 sqlElement 解析 <sql> 节点
+       */
       sqlElement(list, configuration.getDatabaseId());
     }
+    /**
+     * 再次调用 sqlElement，不同的是，这次调用，该方法的第二个参数为 null
+     */
     sqlElement(list, null);
   }
 
   private void sqlElement(List<XNode> list, String requiredDatabaseId) {
     for (XNode context : list) {
+      /**
+       * 获取 id 和 databaseId 属性
+       */
       String databaseId = context.getStringAttribute("databaseId");
       String id = context.getStringAttribute("id");
       id = builderAssistant.applyCurrentNamespace(id, false);
+      /**
+       * 检测当前 databaseId 和 requiredDatabaseId 是否一致
+       */
       if (databaseIdMatchesCurrent(id, databaseId, requiredDatabaseId)) {
+        /**
+         * 将 <id, XNode> 键值对缓存到 sqlFragments 中
+         */
         sqlFragments.put(id, context);
       }
     }
   }
 
+  /**
+   * databaseId 的匹配规则。
+   * 1. databaseId 与 requiredDatabaseId 不一致，即失配，返回 false
+   * 2. 当前节点与之前的节点出现 id 重复的情况，若之前的<sql>节点 databaseId 属性
+   * 3. 不为空，返回 false
+   * 4. 若以上两条规则均匹配失败，此时返回 true
+   * @param id
+   * @param databaseId
+   * @param requiredDatabaseId
+   * @return
+   */
   private boolean databaseIdMatchesCurrent(String id, String databaseId, String requiredDatabaseId) {
     if (requiredDatabaseId != null) {
+      /**
+       * 当前 databaseId 和目标 databaseId 不一致时，返回 false
+       */
       return requiredDatabaseId.equals(databaseId);
     }
+    /**
+     * 如果目标 databaseId 为空，但当前 databaseId 不为空。两者不一致，返回 false
+     */
     if (databaseId != null) {
       return false;
     }
+    /**
+     * 如果当前 <sql> 节点的 id 与之前的 <sql> 节点重复，且先前节点
+     * databaseId 不为空。则忽略当前节点，并返回 false
+     */
     if (!this.sqlFragments.containsKey(id)) {
       return true;
     }
