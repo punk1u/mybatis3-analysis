@@ -287,11 +287,26 @@ public class XMLMapperBuilder extends BaseBuilder {
    */
   private void cacheRefElement(XNode context) {
     if (context != null) {
+      /**
+       * 向Configuration中添加二级缓存配置
+       * 第一个参数和第二个参数分别为在配置文件中声明的
+       * 需要共享二级缓存的两个mapper文件的namespace的值
+       */
       configuration.addCacheRef(builderAssistant.getCurrentNamespace(), context.getStringAttribute("namespace"));
+      /**
+       * 创建CacheRefResolver实例
+       */
       CacheRefResolver cacheRefResolver = new CacheRefResolver(builderAssistant, context.getStringAttribute("namespace"));
       try {
+        /**
+         * 解析参照缓存
+         */
         cacheRefResolver.resolveCacheRef();
       } catch (IncompleteElementException e) {
+        /**
+         * 捕捉IncompleteElementException异常，
+         * 并将cacheRefResolver存入到Configuration的incompleteCacheRefs集合中
+         */
         configuration.addIncompleteCacheRef(cacheRefResolver);
       }
     }

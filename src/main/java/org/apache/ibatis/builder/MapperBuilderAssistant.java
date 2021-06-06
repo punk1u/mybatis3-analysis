@@ -109,10 +109,21 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
     try {
       unresolvedCacheRef = true;
+      /**
+       * 根据命名空间从全局配置对象（Configuration）中查找要与此mapper文件共享的缓存实例
+       */
       Cache cache = configuration.getCache(namespace);
+      /**
+       * 若未查找到缓存实例，此处抛出异常。这里存在两种情况导致未查找到cache 实例，分别如下：
+       * 1.使用者在 <cache-ref> 中配置了一个不存在的命名空间，导致无法找到 cache 实例
+       * 2.使用者所引用的缓存实例还未创建
+       */
       if (cache == null) {
         throw new IncompleteElementException("No cache for namespace '" + namespace + "' could be found.");
       }
+      /**
+       * 设置cache为当前mapper要使用的缓存
+       */
       currentCache = cache;
       unresolvedCacheRef = false;
       return cache;

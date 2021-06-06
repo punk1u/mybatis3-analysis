@@ -30,6 +30,10 @@ public class CacheRefResolver {
   }
 
   public Cache resolveCacheRef() {
+    /**
+     * 调用builderAssistant的useCacheRef(namespace)方法
+     * 来将assistant所使用的二级缓存设置为与cacheRefNamespace所指的mapper文件的二级缓存一样
+     */
     return assistant.useCacheRef(cacheRefNamespace);
   }
 }
