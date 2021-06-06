@@ -92,6 +92,9 @@ public class XMLStatementBuilder extends BaseBuilder {
      */
     boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
+    /**
+     * 解析<include>节点
+     */
     // Include Fragments before parsing
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
     /**
@@ -166,6 +169,9 @@ public class XMLStatementBuilder extends BaseBuilder {
     String keyColumn = context.getStringAttribute("keyColumn");
     String resultSets = context.getStringAttribute("resultSets");
 
+    /**
+     * 构建MappedStatement对象，并将该对象存储到Configuration的mappedStatements中
+     */
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,
         fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass,
         resultSetTypeEnum, flushCache, useCache, resultOrdered,
