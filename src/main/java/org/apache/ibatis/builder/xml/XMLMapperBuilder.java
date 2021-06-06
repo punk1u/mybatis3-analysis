@@ -109,7 +109,8 @@ public class XMLMapperBuilder extends BaseBuilder {
        */
       configuration.addLoadedResource(resource);
       /**
-       * 绑定namespace和mapper文件的关系
+       * 绑定namespace和mapper文件的关系，后续才可直接通过调用mapper接口方法
+       * 执行与之对应的SQL语句
        */
       bindMapperForNamespace();
     }
@@ -716,19 +717,31 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void bindMapperForNamespace() {
+    /**
+     * 获取xml中<mapper>节点中的namespace指定的的命名空间路径名
+     */
     String namespace = builderAssistant.getCurrentNamespace();
     if (namespace != null) {
       Class<?> boundType = null;
       try {
+        /**
+         * 根据命名空间解析对应的mapper接口的Class
+         */
         boundType = Resources.classForName(namespace);
       } catch (ClassNotFoundException e) {
         // ignore, bound type is not required
       }
+      /**
+       * 检测当前 mapper 类是否被绑定过
+       */
       if (boundType != null && !configuration.hasMapper(boundType)) {
         // Spring may not know the real resource name so we set a flag
         // to prevent loading again this resource from the mapper interface
         // look at MapperAnnotationBuilder#loadXmlResource
         configuration.addLoadedResource("namespace:" + namespace);
+        /**
+         * 绑定mapper类
+         */
         configuration.addMapper(boundType);
       }
     }
