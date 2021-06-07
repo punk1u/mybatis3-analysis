@@ -80,9 +80,15 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
+      /**
+       * 如果方法是定义在 Object 类中的(例如equals等方法)，则直接调用
+       */
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, args);
       } else {
+        /**
+         * 这里调用的是mapper接口中声明的方法，即SQL对应的方法
+         */
         return cachedInvoker(method).invoke(proxy, method, args, sqlSession);
       }
     } catch (Throwable t) {
@@ -90,8 +96,19 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     }
   }
 
+  /**
+   * 取出传入的接口中的方法对应的最终执行SQL的执行类MapperMethodInvoker
+   * @param method
+   * @return
+   * @throws Throwable
+   */
   private MapperMethodInvoker cachedInvoker(Method method) throws Throwable {
     try {
+      /**
+       * 首先尝试从缓存Method对象的缓存中获取，
+       * 如果缓存中不存在的话，计算MapperMethodInvoker的逻辑，
+       * 得到MapperMethodInvoker之后，会将其放入缓存
+       */
       return MapUtil.computeIfAbsent(methodCache, method, m -> {
         if (m.isDefault()) {
           try {

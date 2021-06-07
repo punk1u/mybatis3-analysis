@@ -864,6 +864,9 @@ public class Configuration {
   }
 
   public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+    /**
+     * 调用存储Mapper注册信息的MapperRegistry对象获取对应的Mapper对象
+     */
     return mapperRegistry.getMapper(type, sqlSession);
   }
 
