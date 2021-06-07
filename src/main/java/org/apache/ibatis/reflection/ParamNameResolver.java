@@ -68,6 +68,9 @@ public class ParamNameResolver {
     int paramCount = paramAnnotations.length;
     // get names from @Param annotations
     for (int paramIndex = 0; paramIndex < paramCount; paramIndex++) {
+      /**
+       * 检测当前的参数类型是否为RowBounds或ResultHandler
+       */
       if (isSpecialParameter(paramTypes[paramIndex])) {
         // skip special parameters
         continue;
@@ -76,21 +79,48 @@ public class ParamNameResolver {
       for (Annotation annotation : paramAnnotations[paramIndex]) {
         if (annotation instanceof Param) {
           hasParamAnnotation = true;
+          /**
+           * 获取@Param注解内容
+           */
           name = ((Param) annotation).value();
           break;
         }
       }
+      /**
+       * name为空，表明未给参数配置@Param注解
+       */
       if (name == null) {
         // @Param was not specified.
+        /**
+         * 检测是否设置了useActualParamName全局配置
+         */
         if (useActualParamName) {
+          /**
+           * 通过反射获取参数名称。此种方式要求JDK版本为1.8+，
+           * 且要求编译时加入-parameters参数，否则获取到的参数名仍然是arg1、arg2、....、argN
+           */
           name = getActualParamName(method, paramIndex);
         }
         if (name == null) {
           // use the parameter index as the name ("0", "1", ...)
           // gcode issue #71
+          /**
+           * 使用map.size()返回值作为名称
+           * 思考一下为什么不这样写：
+           * name = String.valueOf(paramIndex);
+           * 因为如果参数列表中包含 RowBounds 或 ResultHandler，这两个
+           * 参数会被忽略掉，这样将导致名称不连续。
+           * 比如参数列表 (int p1, int p2, RowBounds rb, int p3)
+           *    - 期望得到名称列表为 ["0", "1", "2"]
+           *    - 实际得到名称列表为 ["0", "1", "3"]
+
+           */
           name = String.valueOf(map.size());
         }
       }
+      /**
+       * 存储 paramIndex 到 name 的映射
+       */
       map.put(paramIndex, name);
     }
     names = Collections.unmodifiableSortedMap(map);

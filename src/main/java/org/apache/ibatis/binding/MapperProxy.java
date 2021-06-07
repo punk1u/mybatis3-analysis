@@ -88,6 +88,8 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
       } else {
         /**
          * 这里调用的是mapper接口中声明的方法，即SQL对应的方法
+         * 首先调用cachedInvoker获取给定接口方法对应的最终执行类（MapperMethodInvoker实现类）
+         * 的invoke方法
          */
         return cachedInvoker(method).invoke(proxy, method, args, sqlSession);
       }
