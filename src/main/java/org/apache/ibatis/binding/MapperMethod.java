@@ -52,9 +52,12 @@ public class MapperMethod {
 
   public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
     /**
-     * 创建SqlCommand和创建MethodSignature
+     * 创建SqlCommand，该对象包含一些和SQL相关的信息
      */
     this.command = new SqlCommand(config, mapperInterface, method);
+    /**
+     * 创建MethodSignature，由类名可知，该对象包含了被拦截方法的一些信息
+     */
     this.method = new MethodSignature(config, mapperInterface, method);
   }
 
@@ -222,23 +225,53 @@ public class MapperMethod {
 
   public static class SqlCommand {
 
+    /**
+     * SQL节点的名称
+     */
     private final String name;
+    /**
+     * SQL节点的操作类型(SELECT|INSERT|UPDATE|DELETE)
+     */
     private final SqlCommandType type;
 
     public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
+      /**
+       * 获得方法名
+       */
       final String methodName = method.getName();
+      /**
+       * 获得方法所在的Class
+       */
       final Class<?> declaringClass = method.getDeclaringClass();
+      /**
+       * 解析MappedStatement
+       */
       MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass,
           configuration);
+      /**
+       * 检测当前方法是否有对应的MappedStatement
+       */
       if (ms == null) {
+        /**
+         * 检测当前方法是否有@Flush注解
+         */
         if (method.getAnnotation(Flush.class) != null) {
+          /**
+           * 设置name和type遍历
+           */
           name = null;
           type = SqlCommandType.FLUSH;
         } else {
+          /**
+           * 若ms==null且方法无@Flush注解，此时抛出异常
+           */
           throw new BindingException("Invalid bound statement (not found): "
               + mapperInterface.getName() + "." + methodName);
         }
       } else {
+        /**
+         * 设置name和type变量
+         */
         name = ms.getId();
         type = ms.getSqlCommandType();
         if (type == SqlCommandType.UNKNOWN) {
@@ -257,12 +290,23 @@ public class MapperMethod {
 
     private MappedStatement resolveMappedStatement(Class<?> mapperInterface, String methodName,
         Class<?> declaringClass, Configuration configuration) {
+      /**
+       * 拼接statement的id：接口名 + . + 方法名
+       */
       String statementId = mapperInterface.getName() + "." + methodName;
+      /**
+       * 如果之前启动扫描并注册到configuration中的statement中包含指定statementId的statement，
+       * 直接取出返回，如果不包含，且指定的要查找的方法确实是在传入的Class中的，说明指定的Class中并没有这个接口方法，
+       * 直接返回null。
+       */
       if (configuration.hasStatement(statementId)) {
         return configuration.getMappedStatement(statementId);
       } else if (mapperInterface.equals(declaringClass)) {
         return null;
       }
+      /**
+       * 如果上面的两个条件都不满足，说明是继承关系的mapper接口对象，递归处理查找对应的MappedStatement
+       */
       for (Class<?> superInterface : mapperInterface.getInterfaces()) {
         if (declaringClass.isAssignableFrom(superInterface)) {
           MappedStatement ms = resolveMappedStatement(superInterface, methodName,
@@ -290,6 +334,9 @@ public class MapperMethod {
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
+      /**
+       * 通过反射解析方法返回类型
+       */
       Type resolvedReturnType = TypeParameterResolver.resolveReturnType(method, mapperInterface);
       if (resolvedReturnType instanceof Class<?>) {
         this.returnType = (Class<?>) resolvedReturnType;
@@ -298,14 +345,29 @@ public class MapperMethod {
       } else {
         this.returnType = method.getReturnType();
       }
+      /**
+       * 检测返回值类型是否是void、集合或数组、Cursor、Map等
+       */
       this.returnsVoid = void.class.equals(this.returnType);
       this.returnsMany = configuration.getObjectFactory().isCollection(this.returnType) || this.returnType.isArray();
       this.returnsCursor = Cursor.class.equals(this.returnType);
       this.returnsOptional = Optional.class.equals(this.returnType);
+      /**
+       * 解析@MapKey注解，获取注解内容
+       */
       this.mapKey = getMapKey(method);
       this.returnsMap = this.mapKey != null;
+      /**
+       * 获取RowBounds参数在参数列表中的位置，如果参数列表中包含多个RowBounds参数，此方法会抛出异常
+       */
       this.rowBoundsIndex = getUniqueParamIndex(method, RowBounds.class);
+      /**
+       * 获取ResultHandler参数在参数列表中的位置
+       */
       this.resultHandlerIndex = getUniqueParamIndex(method, ResultHandler.class);
+      /**
+       * 解析参数列表
+       */
       this.paramNameResolver = new ParamNameResolver(configuration, method);
     }
 
