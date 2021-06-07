@@ -122,6 +122,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
             throw new RuntimeException(e);
           }
         } else {
+          /**
+           * 主要走这个条件分支，
+           * 首先创建了一个MapperMethod，然后创建了一个PlainMethodInvoker
+           */
           return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
         }
       });
@@ -150,6 +154,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   }
 
   private static class PlainMethodInvoker implements MapperMethodInvoker {
+    /**
+     * 表示当前这个MethodInvoker所代理的MapperMethod接口方法
+     */
     private final MapperMethod mapperMethod;
 
     public PlainMethodInvoker(MapperMethod mapperMethod) {
