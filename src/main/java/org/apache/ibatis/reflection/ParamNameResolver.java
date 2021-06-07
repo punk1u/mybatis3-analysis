@@ -157,20 +157,39 @@ public class ParamNameResolver {
    */
   public Object getNamedParams(Object[] args) {
     final int paramCount = names.size();
+    /**
+     * 未传入参数
+     */
     if (args == null || paramCount == 0) {
       return null;
     } else if (!hasParamAnnotation && paramCount == 1) {
+      /**
+       * 传入一个参数
+       */
       Object value = args[names.firstKey()];
       return wrapToMapIfCollection(value, useActualParamName ? names.get(0) : null);
     } else {
       final Map<String, Object> param = new ParamMap<>();
       int i = 0;
       for (Map.Entry<Integer, String> entry : names.entrySet()) {
+        /**
+         * 添加<参数名，参数值>键值对到param中
+         */
         param.put(entry.getValue(), args[entry.getKey()]);
+        /**
+         * genericParamName = param + index。比如param1、param2、...paramN
+         */
         // add generic param names (param1, param2, ...)
         final String genericParamName = GENERIC_NAME_PREFIX + (i + 1);
         // ensure not to overwrite parameter named with @Param
+        /**
+         * 检测names中是否包含genericParamName，什么情况下会包含？
+         * 使用者显示将参数名称配置为param1，即@Param("param1“)
+         */
         if (!names.containsValue(genericParamName)) {
+          /**
+           * 添加<param*,value>到param中
+           */
           param.put(genericParamName, args[entry.getKey()]);
         }
         i++;

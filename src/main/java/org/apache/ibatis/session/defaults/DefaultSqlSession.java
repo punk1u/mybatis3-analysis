@@ -48,6 +48,11 @@ import org.apache.ibatis.session.SqlSession;
 public class DefaultSqlSession implements SqlSession {
 
   private final Configuration configuration;
+  /**
+   * 默认情况下，executor的类型为CachingExecutor,
+   * 该类是一个装饰器类，用于给目标Executor增加二级缓存功能，
+   * 默认情况下目标Executor是SimpleExecutor
+   */
   private final Executor executor;
 
   private final boolean autoCommit;
@@ -73,10 +78,19 @@ public class DefaultSqlSession implements SqlSession {
   @Override
   public <T> T selectOne(String statement, Object parameter) {
     // Popular vote was to return null on 0 results and throw exception on too many.
+    /**
+     * 调用selectList获取结果
+     */
     List<T> list = this.selectList(statement, parameter);
     if (list.size() == 1) {
+      /**
+       * 返回结果
+       */
       return list.get(0);
     } else if (list.size() > 1) {
+      /**
+       * 如果查询结果大于1则抛出异常，这个异常也是很常见的
+       */
       throw new TooManyResultsException("Expected one result (or null) to be returned by selectOne(), but found: " + list.size());
     } else {
       return null;
@@ -147,7 +161,13 @@ public class DefaultSqlSession implements SqlSession {
 
   private <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds, ResultHandler handler) {
     try {
+      /**
+       * 根据statement的name（即xml中声明的SQL操作节点的id）获取对应的MappedStatement
+       */
       MappedStatement ms = configuration.getMappedStatement(statement);
+      /**
+       * 调用Executor实现类中的query方法
+       */
       return executor.query(ms, wrapCollection(parameter), rowBounds, handler);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
