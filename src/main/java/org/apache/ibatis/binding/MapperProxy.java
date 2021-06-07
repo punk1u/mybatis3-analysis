@@ -168,6 +168,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable {
+      /**
+       *  调用MapperMethod中的execute方法，真正开始执行最终的SQL处理逻辑
+       */
       return mapperMethod.execute(sqlSession, args);
     }
   }
