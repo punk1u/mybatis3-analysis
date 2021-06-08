@@ -26,6 +26,7 @@ import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.session.ResultHandler;
 
 /**
+ * StatementHandler 是 MyBatis 源码的边界，再往下层就是 JDBC层面的接口了
  * @author Clinton Begin
  */
 public interface StatementHandler {
