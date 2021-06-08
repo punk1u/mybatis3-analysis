@@ -23,6 +23,7 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 参数映射列表，SQL中的每个#{xxx}占位符都会被解析成相应的ParameterMapping对象
  * @author Clinton Begin
  */
 public class ParameterMapping {
