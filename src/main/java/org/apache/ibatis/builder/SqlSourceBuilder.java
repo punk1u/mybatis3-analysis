@@ -40,15 +40,37 @@ public class SqlSourceBuilder extends BaseBuilder {
     super(configuration);
   }
 
+  /**
+   * 解析#{}占位符
+   * @param originalSql
+   * @param parameterType
+   * @param additionalParameters
+   * @return
+   */
   public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
+    /**
+     * 创建#{}占位符处理器
+     */
     ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType, additionalParameters);
+    /**
+     * 创建#{}占位符解析器,GenericTokenParser负责将#{}占位符中的内容抽取出来，并将抽取出的内容传给ParameterMappingTokenHandler
+     * 的handleToken方法。handleToken 方法负责将传入的参数解析成对应的 ParameterMapping 对象，
+     * 这步操作由 buildParameterMapping 方法完成。
+     *
+     */
     GenericTokenParser parser = new GenericTokenParser("#{", "}", handler);
+    /**
+     * 解析#{}占位符，并返回解析结果
+     */
     String sql;
     if (configuration.isShrinkWhitespacesInSql()) {
       sql = parser.parse(removeExtraWhitespaces(originalSql));
     } else {
       sql = parser.parse(originalSql);
     }
+    /**
+     * 封装解析结果到StaticSqlSource中，并返回
+     */
     return new StaticSqlSource(configuration, sql, handler.getParameterMappings());
   }
 
@@ -82,19 +104,56 @@ public class SqlSourceBuilder extends BaseBuilder {
       return parameterMappings;
     }
 
+    /**
+     * 将传入的参数解析成对应的ParameterMapping对象
+     * @param content
+     * @return
+     */
     @Override
     public String handleToken(String content) {
+      /**
+       * 获取content的对应的ParameterMapping
+       */
       parameterMappings.add(buildParameterMapping(content));
+      /**
+       * 返回"?"
+       */
       return "?";
     }
 
     private ParameterMapping buildParameterMapping(String content) {
+      /**
+       * 将 #{xxx} 占位符中的内容解析成 Map。举例说明一下。如下：
+       *
+       * #{age,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler}
+       *
+       * 上面占位符中的内容最终会被解析成如下的结果：
+       *
+       * {
+       * "property": "age",
+       * "typeHandler": "MyTypeHandler",
+       * "jdbcType": "NUMERIC",
+       * "javaType": "int"
+       * }
+       *
+       * parseParameterMapping 内部依赖 ParameterExpression 对字符串进行解析
+       */
       Map<String, String> propertiesMap = parseParameterMapping(content);
       String property = propertiesMap.get("property");
       Class<?> propertyType;
+      /**
+       * metaParameters 为 DynamicContext 成员变量 bindings 的元信息对象
+       */
       if (metaParameters.hasGetter(property)) { // issue #448 get type from additional params
         propertyType = metaParameters.getGetterType(property);
       } else if (typeHandlerRegistry.hasTypeHandler(parameterType)) {
+        /**
+         * parameterType 是运行时参数的类型。如果用户传入的是单个参数，比如 Article
+         * 对象，此时 parameterType 为 Article.class。如果用户传入的多个参数，比如
+         * [id = 1, author = "coolblog"]，MyBatis 会使用 ParamMap 封装这些参数，
+         * 此时 parameterType 为 ParamMap.class。如果 parameterType 有相应的
+         * TypeHandler，这里则把 parameterType 设为 propertyType
+         */
         propertyType = parameterType;
       } else if (JdbcType.CURSOR.name().equals(propertiesMap.get("jdbcType"))) {
         propertyType = java.sql.ResultSet.class;
@@ -111,11 +170,20 @@ public class SqlSourceBuilder extends BaseBuilder {
       ParameterMapping.Builder builder = new ParameterMapping.Builder(configuration, property, propertyType);
       Class<?> javaType = propertyType;
       String typeHandlerAlias = null;
+      /**
+       * 遍历 propertiesMap
+       */
       for (Map.Entry<String, String> entry : propertiesMap.entrySet()) {
         String name = entry.getKey();
         String value = entry.getValue();
         if ("javaType".equals(name)) {
+          /**
+           * 如果用户明确配置了 javaType，则以用户的配置为准
+           */
           javaType = resolveClass(value);
+          /**
+           * 解析 jdbcType
+           */
           builder.javaType(javaType);
         } else if ("jdbcType".equals(name)) {
           builder.jdbcType(resolveJdbcType(value));
@@ -138,8 +206,14 @@ public class SqlSourceBuilder extends BaseBuilder {
         }
       }
       if (typeHandlerAlias != null) {
+        /**
+         * 解析 TypeHandler
+         */
         builder.typeHandler(resolveTypeHandler(javaType, typeHandlerAlias));
       }
+      /**
+       * 构建 ParameterMapping 对象
+       */
       return builder.build();
     }
 

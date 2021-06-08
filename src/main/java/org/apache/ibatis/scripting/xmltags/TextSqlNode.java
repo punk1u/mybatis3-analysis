@@ -23,9 +23,13 @@ import org.apache.ibatis.scripting.ScriptingException;
 import org.apache.ibatis.type.SimpleTypeRegistry;
 
 /**
+ * 用于存储带有${}占位符的文本
  * @author Clinton Begin
  */
 public class TextSqlNode implements SqlNode {
+  /**
+   * 含有${}占位符的SQL文本
+   */
   private final String text;
   private final Pattern injectionFilter;
 
@@ -47,11 +51,26 @@ public class TextSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    /**
+     * 创建${}占位符解析器
+     */
     GenericTokenParser parser = createParser(new BindingTokenParser(context, injectionFilter));
+    /**
+     * 解析${}占位符，并将解析结果添加到DynamicContext中
+     */
     context.appendSql(parser.parse(text));
     return true;
   }
 
+  /**
+   * 创建占位符解析器，GenericTokenParser是一个通用解析器，并非只能解析${}占位符
+   *
+   * GenericTokenParser 负责将标记中的内容抽取出来，并将标记内容交给相应的
+   * TokenHandler 去处理。BindingTokenParser 负责解析标记内容，并将解析结果返回给
+   * GenericTokenParser，用于替换${xxx}标记
+   * @param handler
+   * @return
+   */
   private GenericTokenParser createParser(TokenHandler handler) {
     return new GenericTokenParser("${", "}", handler);
   }
@@ -74,8 +93,14 @@ public class TextSqlNode implements SqlNode {
       } else if (SimpleTypeRegistry.isSimpleType(parameter.getClass())) {
         context.getBindings().put("value", parameter);
       }
+      /**
+       * 通过ONGL从用户传入的参数中获取结果
+       */
       Object value = OgnlCache.getValue(content, context.getBindings());
       String srtValue = value == null ? "" : String.valueOf(value); // issue #274 return "" instead of "null"
+      /**
+       * 通过正则表达式检测strValue有效性
+       */
       checkInjection(srtValue);
       return srtValue;
     }

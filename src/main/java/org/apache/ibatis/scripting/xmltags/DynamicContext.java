@@ -27,6 +27,9 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * SQL语句构建的上下文，每个SQL片段(<if>、<where>)解析完成后，
+ * 都会将解析结果存入DynamicContext中。待所有的SQL片段解析完毕后，
+ * 一条完整的SQL语句就会出现在DynamicContext对象中
  * @author Clinton Begin
  */
 public class DynamicContext {
@@ -38,11 +41,20 @@ public class DynamicContext {
     OgnlRuntime.setPropertyAccessor(ContextMap.class, new ContextAccessor());
   }
 
+  /**
+   * 存储一些额外的信息，比如运行时参数和databaseId等
+   */
   private final ContextMap bindings;
+  /**
+   * 存放SQL片段的解析结果
+   */
   private final StringJoiner sqlBuilder = new StringJoiner(" ");
   private int uniqueNumber = 0;
 
   public DynamicContext(Configuration configuration, Object parameterObject) {
+    /**
+     * 创建 ContextMap
+     */
     if (parameterObject != null && !(parameterObject instanceof Map)) {
       MetaObject metaObject = configuration.newMetaObject(parameterObject);
       boolean existsTypeHandler = configuration.getTypeHandlerRegistry().hasTypeHandler(parameterObject.getClass());
@@ -50,6 +62,9 @@ public class DynamicContext {
     } else {
       bindings = new ContextMap(null, false);
     }
+    /**
+     * 存放运行时参数 parameterObject 以及 databaseId
+     */
     bindings.put(PARAMETER_OBJECT_KEY, parameterObject);
     bindings.put(DATABASE_ID_KEY, configuration.getDatabaseId());
   }
@@ -62,6 +77,10 @@ public class DynamicContext {
     bindings.put(name, value);
   }
 
+  /**
+   * 用于操作sqlBuilder的两个接口
+   * @param sql
+   */
   public void appendSql(String sql) {
     sqlBuilder.add(sql);
   }
@@ -87,6 +106,9 @@ public class DynamicContext {
     @Override
     public Object get(Object key) {
       String strKey = (String) key;
+      /**
+       * 检查是否包含strKey，若包含则直接返回
+       */
       if (super.containsKey(strKey)) {
         return super.get(strKey);
       }
@@ -96,6 +118,9 @@ public class DynamicContext {
       }
 
       if (fallbackParameterObject && !parameterMetaObject.hasGetter(strKey)) {
+        /**
+         * 从运行时参数中查找结果
+         */
         return parameterMetaObject.getOriginalObject();
       } else {
         // issue #61 do not modify the context when reading

@@ -21,6 +21,8 @@ import java.util.List;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 用于存储<set>节点的内容
+ * 继承自TrimSqlNode节点
  * @author Clinton Begin
  */
 public class SetSqlNode extends TrimSqlNode {

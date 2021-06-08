@@ -16,6 +16,10 @@
 package org.apache.ibatis.parsing;
 
 /**
+ * 通用的标记解析器，用于解析形如${xxx}，#{xxx}等标记。
+ * GenericTokenParser 负责将标记中的内容抽取出来，并将标记内容交给相应的
+ * TokenHandler 去处理。BindingTokenParser 负责解析标记内容，并将解析结果返回给
+ * GenericTokenParser，用于替换${xxx}标记
  * @author Clinton Begin
  */
 public class GenericTokenParser {
