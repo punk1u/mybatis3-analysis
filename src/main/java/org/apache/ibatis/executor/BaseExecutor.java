@@ -381,6 +381,11 @@ public abstract class BaseExecutor implements Executor {
   }
 
   protected Connection getConnection(Log statementLog) throws SQLException {
+    /**
+     * 通过调用存储在JdbcTransaction或ManagedTransaction中的DataSource接口在MyBatis中的两个
+     * 数据源对象PooledDataSource 和 UnpooledDataSource的getConnection()方法获取Connection连接
+     *
+     */
     Connection connection = transaction.getConnection();
     if (statementLog.isDebugEnabled()) {
       return ConnectionLogger.newInstance(connection, statementLog, queryStack);

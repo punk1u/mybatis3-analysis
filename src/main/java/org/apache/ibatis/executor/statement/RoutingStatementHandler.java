@@ -42,6 +42,17 @@ public class RoutingStatementHandler implements StatementHandler {
     /**
      * 根据StatementType创建不同的StatementHandler
      * 默认情况下，statementType的值为PREPARED
+     *
+     * JDBC提供了三种Statement接口，分别是Statement、PreparedStatement和CallableStatement
+     * PreparedStatement继承自Statement、CallableStatement又继承自PreparedStatement
+     *
+     * 三个接口的层级分明，其中 Statement 接口提供了执行 SQL，获取执行结果等基本
+     * 功能。PreparedStatement 在此基础上，对 IN 类型的参数提供了支持。使得可以使用运
+     * 行时参数替换 SQL 中的问号?占位符，而不用手动拼接 SQL。CallableStatement 则是在
+     * PreparedStatement 基础上，对 OUT 类型的参数提供了支持，该种类型的参数用于保存存储
+     * 过程输出的结果。
+     *
+     *
      */
     switch (ms.getStatementType()) {
       case STATEMENT:
