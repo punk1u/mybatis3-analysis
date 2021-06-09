@@ -28,6 +28,8 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * Executor实现类中的方法在进行下一步操作前，都会先刷新各自的缓存。
+ * 默认情况下insert、update 和 delete 操作都会清空一二级缓存。
  * @author Clinton Begin
  */
 public interface Executor {
