@@ -64,6 +64,7 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.apache.ibatis.util.MapUtil;
 
 /**
+ * MyBatis中将查询结果，即结果集 ResultSet 自动映射成实体类对象的工具类
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Iwao AVE!
@@ -178,26 +179,54 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   //
   // HANDLE RESULT SETS
   //
+
+  /**
+   * 处理SQL执行结果集ResultSet，将其转换为实体类对象的方法
+   * @param stmt
+   * @return
+   * @throws SQLException
+   */
   @Override
   public List<Object> handleResultSets(Statement stmt) throws SQLException {
     ErrorContext.instance().activity("handling results").object(mappedStatement.getId());
 
+    /**
+     * 最终要返回的List数据对象
+     */
     final List<Object> multipleResults = new ArrayList<>();
 
     int resultSetCount = 0;
+    /**
+     * 获取第一个结果集
+     */
     ResultSetWrapper rsw = getFirstResultSet(stmt);
 
+    /**
+     * 获取这个MappedStatement对应的SQL节点可能使用的<resultMap>节点信息
+     */
     List<ResultMap> resultMaps = mappedStatement.getResultMaps();
     int resultMapCount = resultMaps.size();
     validateResultMapsCount(rsw, resultMapCount);
+    /**
+     * 遍历结果集
+     */
     while (rsw != null && resultMapCount > resultSetCount) {
       ResultMap resultMap = resultMaps.get(resultSetCount);
+      /**
+       * 处理结果集
+       */
       handleResultSet(rsw, resultMap, multipleResults, null);
+      /**
+       * 获取下一个结果集
+       */
       rsw = getNextResultSet(stmt);
       cleanUpAfterHandlingResultSet();
       resultSetCount++;
     }
 
+    /**
+     * 处理多结果集，一般情况下，如果不调用存储过程，不会涉及多结果集的问题
+     */
     String[] resultSets = mappedStatement.getResultSets();
     if (resultSets != null) {
       while (rsw != null && resultSetCount < resultSets.length) {
@@ -235,10 +264,18 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   }
 
   private ResultSetWrapper getFirstResultSet(Statement stmt) throws SQLException {
+    /**
+     * 获取结果集
+     */
     ResultSet rs = stmt.getResultSet();
     while (rs == null) {
       // move forward to get the first resultset in case the driver
       // doesn't return the resultset as the first result (HSQLDB 2.1)
+      /**
+       * 移动 ResultSet 指针到下一个上，有些数据库驱动可能需要使用者
+       * 先调用 getMoreResults 方法，然后才能调用 getResultSet 方法
+       * 获取到第一个 ResultSet
+       */
       if (stmt.getMoreResults()) {
         rs = stmt.getResultSet();
       } else {
@@ -248,6 +285,12 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
       }
     }
+    /**
+     * 这里并不直接返回 ResultSet，而是将其封装到 ResultSetWrapper 中。
+     * ResultSetWrapper 中包含了 ResultSet 一些元信息，比如列名称、
+     * 每列对应的 JdbcType、以及每列对应的 Java 类名（class name，譬如
+     * java.lang.String）等
+     */
     return rs != null ? new ResultSetWrapper(rs, configuration) : null;
   }
 
@@ -292,16 +335,42 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
   }
 
+  /**
+   * 处理结果集
+   * @param rsw
+   * @param resultMap
+   * @param multipleResults
+   * @param parentMapping
+   * @throws SQLException
+   */
   private void handleResultSet(ResultSetWrapper rsw, ResultMap resultMap, List<Object> multipleResults, ResultMapping parentMapping) throws SQLException {
     try {
       if (parentMapping != null) {
+        /**
+         * 多结果集相关逻辑
+         */
         handleRowValues(rsw, resultMap, null, RowBounds.DEFAULT, parentMapping);
       } else {
+        /**
+         * 检测 resultHandler 是否为空。ResultHandler 是一个接口，使用者可
+         * 实现该接口，这样我们可以通过 ResultHandler 自定义接收查询结果的
+         * 动作。比如我们可将结果存储到 List、Map 亦或是 Set，甚至丢弃，
+         * 这完全取决于自定义的实现逻辑。
+         */
         if (resultHandler == null) {
+          /**
+           * 创建默认的结果处理器
+           */
           DefaultResultHandler defaultResultHandler = new DefaultResultHandler(objectFactory);
+          /**
+           * 处理结果集的行数据
+           */
           handleRowValues(rsw, resultMap, defaultResultHandler, rowBounds, null);
           multipleResults.add(defaultResultHandler.getResultList());
         } else {
+          /**
+           * 处理结果集的行数据
+           */
           handleRowValues(rsw, resultMap, resultHandler, rowBounds, null);
         }
       }
@@ -324,8 +393,15 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     if (resultMap.hasNestedResultMaps()) {
       ensureNoRowBounds();
       checkResultHandler();
+      /**
+       * 处理嵌套查询，嵌套查询即：
+       * <ResultMap>中嵌套了一个<ResultMap>
+       */
       handleRowValuesForNestedResultMap(rsw, resultMap, resultHandler, rowBounds, parentMapping);
     } else {
+      /**
+       * 处理简单映射的情况
+       */
       handleRowValuesForSimpleResultMap(rsw, resultMap, resultHandler, rowBounds, parentMapping);
     }
   }
@@ -349,10 +425,25 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       throws SQLException {
     DefaultResultContext<Object> resultContext = new DefaultResultContext<>();
     ResultSet resultSet = rsw.getResultSet();
+    /**
+     * 根据 RowBounds 定位到指定行记录
+     */
     skipRows(resultSet, rowBounds);
+    /**
+     * 检测是否还有更多行的数据需要处理
+     */
     while (shouldProcessMoreRows(resultContext, rowBounds) && !resultSet.isClosed() && resultSet.next()) {
+      /**
+       * 获取经过鉴别器处理后的 ResultMap
+       */
       ResultMap discriminatedResultMap = resolveDiscriminatedResultMap(resultSet, resultMap, null);
+      /**
+       * 从 resultSet 中获取结果
+       */
       Object rowValue = getRowValue(rsw, discriminatedResultMap, null);
+      /**
+       * 存储结果
+       */
       storeObject(resultHandler, resultContext, rowValue, parentMapping, resultSet);
     }
   }
@@ -376,12 +467,22 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   }
 
   private void skipRows(ResultSet rs, RowBounds rowBounds) throws SQLException {
+    /**
+     * 检测 rs 的类型，不同的类型行数据定位方式是不同的
+     */
     if (rs.getType() != ResultSet.TYPE_FORWARD_ONLY) {
       if (rowBounds.getOffset() != RowBounds.NO_ROW_OFFSET) {
+        /**
+         * 直接定位到 rowBounds.getOffset() 位置处
+         */
         rs.absolute(rowBounds.getOffset());
       }
     } else {
       for (int i = 0; i < rowBounds.getOffset(); i++) {
+        /**
+         * 通过多次调用 rs.next() 方法实现行数据定位。
+         * 当 Offset 数值很大时，这种效率很低下
+         */
         if (!rs.next()) {
           break;
         }
@@ -395,13 +496,25 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private Object getRowValue(ResultSetWrapper rsw, ResultMap resultMap, String columnPrefix) throws SQLException {
     final ResultLoaderMap lazyLoader = new ResultLoaderMap();
+    /**
+     * 创建实体类对象，比如User对象
+     */
     Object rowValue = createResultObject(rsw, resultMap, lazyLoader, columnPrefix);
     if (rowValue != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
       final MetaObject metaObject = configuration.newMetaObject(rowValue);
       boolean foundValues = this.useConstructorMappings;
+      /**
+       * 检测是否应该自动映射结果集
+       */
       if (shouldApplyAutomaticMappings(resultMap, false)) {
+        /**
+         * 进行自动映射
+         */
         foundValues = applyAutomaticMappings(rsw, resultMap, metaObject, columnPrefix) || foundValues;
       }
+      /**
+       * 根据 <resultMap> 节点中配置的映射关系进行映射
+       */
       foundValues = applyPropertyMappings(rsw, resultMap, metaObject, lazyLoader, columnPrefix) || foundValues;
       foundValues = lazyLoader.size() > 0 || foundValues;
       rowValue = foundValues || configuration.isReturnInstanceForEmptyRow() ? rowValue : null;
@@ -624,16 +737,38 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   // INSTANTIATION & CONSTRUCTOR MAPPING
   //
 
+  /**
+   * 创建最终结果对象
+   * @param rsw
+   * @param resultMap
+   * @param lazyLoader
+   * @param columnPrefix
+   * @return
+   * @throws SQLException
+   */
   private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, ResultLoaderMap lazyLoader, String columnPrefix) throws SQLException {
     this.useConstructorMappings = false; // reset previous mapping result
     final List<Class<?>> constructorArgTypes = new ArrayList<>();
     final List<Object> constructorArgs = new ArrayList<>();
+    /**
+     * 调用重载方法创建实体类对象
+     */
     Object resultObject = createResultObject(rsw, resultMap, constructorArgTypes, constructorArgs, columnPrefix);
+    /**
+     * 检测实体类是否有相应的类型处理器
+     */
     if (resultObject != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
       final List<ResultMapping> propertyMappings = resultMap.getPropertyResultMappings();
       for (ResultMapping propertyMapping : propertyMappings) {
         // issue gcode #109 && issue #149
+        /**
+         * 如果开启了延迟加载，则为 resultObject 生成代理类
+         */
         if (propertyMapping.getNestedQueryId() != null && propertyMapping.isLazy()) {
+          /**
+           * 创建代理类，默认使用 Javassist 框架生成代理类。由于实体类通常
+           * 不会实现接口，所以不能使用 JDK 动态代理 API 为实体类生成代理
+           */
           resultObject = configuration.getProxyFactory().createProxy(resultObject, lazyLoader, configuration, objectFactory, constructorArgTypes, constructorArgs);
           break;
         }

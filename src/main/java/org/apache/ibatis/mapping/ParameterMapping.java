@@ -24,15 +24,36 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
  * 参数映射列表，SQL中的每个#{xxx}占位符都会被解析成相应的ParameterMapping对象
+ *
+ * 假设有这样一条 SQL 语句：
+ * SELECT * FROM author WHERE name = #{name} AND age = #{age}
+ * 这个 SQL 语句中包含两个#{}占位符，在运行时这两个占位符会被解析成两个
+ * ParameterMapping 对象。如下：
+ * ParameterMapping{property='name', mode=IN,
+ *    javaType=class java.lang.String, jdbcType=null, ...}
+ * 和
+ * ParameterMapping{property='age', mode=IN,
+ *    javaType=class java.lang.Integer, jdbcType=null, ...}
+ *
+ *
  * @author Clinton Begin
  */
 public class ParameterMapping {
 
   private Configuration configuration;
 
+  /**
+   * 假设SQL中包含#{name}，则property的值就是name
+   */
   private String property;
   private ParameterMode mode;
+  /**
+   * 表示#{}中的值的java类型（例如java.lang.String等）
+   */
   private Class<?> javaType = Object.class;
+  /**
+   * 表示与#{}中的值对应的在数据库中的类型
+   */
   private JdbcType jdbcType;
   private Integer numericScale;
   private TypeHandler<?> typeHandler;

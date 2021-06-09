@@ -31,6 +31,18 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
+/**
+ * 假设有这样一条 SQL 语句：
+ *    SELECT * FROM author WHERE name = #{name} AND age = #{age}
+ * 这里假设下面这个方法与上面的 SQL 对应：
+ * Author findByNameAndAge(@Param("name")String name, @Param("age")Integer age)
+ *
+ * 该方法的参数列表会被 ParamNameResolver 解析成一个 map，如下：
+ * {
+ *    0: "name",
+ *    1: "age"
+ * }
+ */
 public class ParamNameResolver {
 
   public static final String GENERIC_NAME_PREFIX = "param";

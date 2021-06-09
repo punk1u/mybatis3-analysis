@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.ibatis.cursor.Cursor;
 
 /**
+ * MyBatis中将查询结果，即结果集 ResultSet 自动映射成实体类对象的接口类
  * @author Clinton Begin
  */
 public interface ResultSetHandler {

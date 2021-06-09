@@ -154,6 +154,11 @@ public class MapperMethod {
     return result;
   }
 
+  /**
+   * 处理 插入、更新以及删除操作返回的受影响行数整数值
+   * @param rowCount
+   * @return
+   */
   private Object rowCountResult(int rowCount) {
     final Object result;
     if (method.returnsVoid()) {
