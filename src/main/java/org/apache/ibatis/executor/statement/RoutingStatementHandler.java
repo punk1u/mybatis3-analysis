@@ -30,6 +30,7 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 /**
+ * RoutingStatementHandler是根据StatementType创建相应的其他StatementHandler的路由器实现类
  * @author Clinton Begin
  */
 public class RoutingStatementHandler implements StatementHandler {
@@ -38,6 +39,10 @@ public class RoutingStatementHandler implements StatementHandler {
 
   public RoutingStatementHandler(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
 
+    /**
+     * 根据StatementType创建不同的StatementHandler
+     * 默认情况下，statementType的值为PREPARED
+     */
     switch (ms.getStatementType()) {
       case STATEMENT:
         delegate = new SimpleStatementHandler(executor, ms, parameter, rowBounds, resultHandler, boundSql);

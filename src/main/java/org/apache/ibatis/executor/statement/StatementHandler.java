@@ -27,6 +27,13 @@ import org.apache.ibatis.session.ResultHandler;
 
 /**
  * StatementHandler 是 MyBatis 源码的边界，再往下层就是 JDBC层面的接口了
+ * 在执行 SQL 之前，StatementHandler 需要创建合适的 Statement 对象，然后填充参数值到
+ * Statement 对象中，最后通过 Statement 对象执行 SQL。待 SQL 执行完毕，还要去处理查询结果等
+ *
+ * StatementHandler接口的直接实现类有BaseStatementHandler和RoutingStatementHandler
+ * BaseStatementHandler又有三个子类：SimpleStatementHandler、CallableStatementHandler、PreparedStatementHandler
+ * 这三个最下层的StatementHandler实现类与三种不同的Statement进行交互。
+ *
  * @author Clinton Begin
  */
 public interface StatementHandler {

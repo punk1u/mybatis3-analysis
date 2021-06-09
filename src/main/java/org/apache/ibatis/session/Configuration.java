@@ -676,8 +676,25 @@ public class Configuration {
     return resultSetHandler;
   }
 
+  /**
+   * 新建StatementHandler，StatementHandler会创建合适的 Statement 对象，然后填充参数值到
+   * Statement 对象中，最后通过 Statement 对象执行 SQL。待 SQL 执行完毕，还要去处理查询结果
+   * @param executor
+   * @param mappedStatement
+   * @param parameterObject
+   * @param rowBounds
+   * @param resultHandler
+   * @param boundSql
+   * @return
+   */
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    /**
+     * 创建具有路由功能的StatementHandler
+     */
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);
+    /**
+     * 应用插件到StatementHandler上
+     */
     statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
     return statementHandler;
   }

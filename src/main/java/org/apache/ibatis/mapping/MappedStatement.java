@@ -39,6 +39,9 @@ public final class MappedStatement {
   private String id;
   private Integer fetchSize;
   private Integer timeout;
+  /**
+   * 这个MappedStatement表示的Statement的类型
+   */
   private StatementType statementType;
   private ResultSetType resultSetType;
   private SqlSource sqlSource;
