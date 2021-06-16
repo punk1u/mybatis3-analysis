@@ -76,6 +76,9 @@ public class XMLScriptBuilder extends BaseBuilder {
     if (isDynamic) {
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
+      /**
+       * 创建存储非动态SQL的RawSqlSource对象，其中会解析#{}占位符
+       */
       sqlSource = new RawSqlSource(configuration, rootSqlNode, parameterType);
     }
     return sqlSource;
