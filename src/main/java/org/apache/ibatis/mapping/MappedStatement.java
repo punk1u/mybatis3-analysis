@@ -36,6 +36,9 @@ public final class MappedStatement {
 
   private String resource;
   private Configuration configuration;
+  /**
+   * 表示XML中 SELECT|INSERT|UPDATE|DELETE SQL节点的id，与对应的Mapper接口中的方法名相同
+   */
   private String id;
   private Integer fetchSize;
   private Integer timeout;
