@@ -149,7 +149,8 @@ public class XMLStatementBuilder extends BaseBuilder {
     }
 
     /**
-     * 解析SQL 根据SQL文本来判断是否需要动态解析 如果没有动态SQL语句且只有#{}的时候，直接静态解析使用?占位
+     * 解析SQL 根据SQL文本来判断是否需要动态解析 如果没有动态SQL语句(${}、<where>、<foreach>等节点)
+     * 且只有#{}的时候，直接静态解析使用?占位符替换#{}，
      * 当有${}时就不解析了，后边调用时再解析
      */
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
