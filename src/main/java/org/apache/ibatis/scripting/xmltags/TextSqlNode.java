@@ -124,6 +124,11 @@ public class TextSqlNode implements SqlNode {
       return isDynamic;
     }
 
+    /**
+     * 当扫描到SQL中有${}的时候调用此方法，其实就是不解析，在运行时候的时候才会替换成具体的值
+     * @param content
+     * @return
+     */
     @Override
     public String handleToken(String content) {
       this.isDynamic = true;
