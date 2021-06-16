@@ -83,18 +83,25 @@ public class XMLScriptBuilder extends BaseBuilder {
 
   protected MixedSqlNode parseDynamicTags(XNode node) {
     List<SqlNode> contents = new ArrayList<>();
+    /**
+     * 获取<select>、<insert>等4个标签的子节点，子节点包括元素节点和文本节点
+     */
     NodeList children = node.getNode().getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));
       /**
-       * 如果是 普通sql 则走这个case
+       * 如果是 普通sql文本节点 则走这个case
        */
       if (child.getNode().getNodeType() == Node.CDATA_SECTION_NODE || child.getNode().getNodeType() == Node.TEXT_NODE) {
         String data = child.getStringBody("");
+
         /**
-         * 这里会去判断是否包含 ${} 来决定到底是那种和类型
+         * 将文本内容封装到SqlNode中
          */
         TextSqlNode textSqlNode = new TextSqlNode(data);
+        /**
+         * 这里会去判断是否包含 ${} 来决定到底是那种和类型，如果包含${}则是动态（dynamic）的
+         */
         if (textSqlNode.isDynamic()) {
           contents.add(textSqlNode);
           isDynamic = true;
@@ -107,13 +114,19 @@ public class XMLScriptBuilder extends BaseBuilder {
       } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628
         String nodeName = child.getNode().getNodeName();
         /**
-         * 会根据nodeName去拿TypeHandler
+         * 会根据nodeName去拿NodeHandler，比如where标签则去获取对应的WhereHandler
          */
         NodeHandler handler = nodeHandlerMap.get(nodeName);
         if (handler == null) {
           throw new BuilderException("Unknown element <" + nodeName + "> in SQL statement.");
         }
+        /**
+         * 调用相应的NodeHandler处理这个标签节点
+         */
         handler.handleNode(child, contents);
+        /**
+         * 包含动态SQL标签节点时，也说明这个SQL是动态(dynamic)的
+         */
         isDynamic = true;
       }
     }
