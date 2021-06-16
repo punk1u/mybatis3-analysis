@@ -116,16 +116,10 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
 
     /**
-     * 解析额外的ResultMap节点的信息
+     * 重新解析之前解析不了的节点
      */
     parsePendingResultMaps();
-    /**
-     * 解析额外的CacheRef节点的信息
-     */
     parsePendingCacheRefs();
-    /**
-     * 解析额外的Statement节点的信息
-     */
     parsePendingStatements();
   }
 
@@ -234,12 +228,13 @@ public class XMLMapperBuilder extends BaseBuilder {
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
       try {
         /**
-         * 解析Statement节点，并将解析结果存储到configuration的mappedStatements集合中
+         * 解析XML中的Statement节点(SELECT|UPDATE|DELETE|INSERT)，
+         * 并将解析结果存储到configuration的mappedStatements集合中
          */
         statementParser.parseStatementNode();
       } catch (IncompleteElementException e) {
         /**
-         *  解析失败，将解析器放入 Configuration 的 incompleteStatements 集合中
+         *  XML语句有问题时，存储到集合中，等第一次解析完之后再重新解析
          */
         configuration.addIncompleteStatement(statementParser);
       }
