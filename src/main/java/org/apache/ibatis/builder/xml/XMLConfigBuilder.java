@@ -458,7 +458,8 @@ public class XMLConfigBuilder extends BaseBuilder {
          */
         if (isSpecifiedEnvironment(id)) {
           /**
-           * 解析transactionManager节点
+           * 解析transactionManager节点,并根据<transactionManager>节点中定义的type属性的值
+           * 获取对应的事务工厂对象
            */
           TransactionFactory txFactory = transactionManagerElement(child.evalNode("transactionManager"));
           /**
@@ -469,6 +470,9 @@ public class XMLConfigBuilder extends BaseBuilder {
            * 从数据源工厂中获取数据源
            */
           DataSource dataSource = dsFactory.getDataSource();
+          /**
+           * 将数据源、事务工厂、数据库id等属性一起封装为Environment对象
+           */
           Environment.Builder environmentBuilder = new Environment.Builder(id)
               .transactionFactory(txFactory)
               .dataSource(dataSource);
@@ -531,10 +535,19 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析mybatis配置文件中的<environment>节点中的<transactionManager>节点
+   * @param context
+   * @return
+   * @throws Exception
+   */
   private TransactionFactory transactionManagerElement(XNode context) throws Exception {
     if (context != null) {
       String type = context.getStringAttribute("type");
       Properties props = context.getChildrenAsProperties();
+      /**
+       * 根据<transactionManager>节点中的type的值获取对应的事务工厂对象
+       */
       TransactionFactory factory = (TransactionFactory) resolveClass(type).getDeclaredConstructor().newInstance();
       factory.setProperties(props);
       return factory;

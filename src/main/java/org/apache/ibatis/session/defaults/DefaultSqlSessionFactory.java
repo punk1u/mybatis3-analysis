@@ -90,7 +90,14 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
   private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level, boolean autoCommit) {
     Transaction tx = null;
     try {
+      /**
+       * 获取存储在Configuration中的 在mybatis xml配置文件
+       * 中定义的<environment>节点中的数据库连接配置信息
+       */
       final Environment environment = configuration.getEnvironment();
+      /**
+       * 根据配置的数据库连接信息创建
+       */
       final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
       tx = transactionFactory.newTransaction(environment.getDataSource(), level, autoCommit);
       final Executor executor = configuration.newExecutor(tx, execType);

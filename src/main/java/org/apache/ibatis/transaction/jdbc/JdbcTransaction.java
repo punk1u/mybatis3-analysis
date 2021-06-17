@@ -27,6 +27,9 @@ import org.apache.ibatis.transaction.Transaction;
 import org.apache.ibatis.transaction.TransactionException;
 
 /**
+ *
+ * Jdbc连接的事务对象
+ *
  * {@link Transaction} that makes use of the JDBC commit and rollback facilities directly.
  * It relies on the connection retrieved from the dataSource to manage the scope of the transaction.
  * Delays connection retrieval until getConnection() is called.
@@ -55,6 +58,11 @@ public class JdbcTransaction implements Transaction {
     this.connection = connection;
   }
 
+  /**
+   * 获取数据库连接
+   * @return
+   * @throws SQLException
+   */
   @Override
   public Connection getConnection() throws SQLException {
     if (connection == null) {
@@ -63,6 +71,10 @@ public class JdbcTransaction implements Transaction {
     return connection;
   }
 
+  /**
+   * 提交事务的方法
+   * @throws SQLException
+   */
   @Override
   public void commit() throws SQLException {
     if (connection != null && !connection.getAutoCommit()) {
@@ -73,6 +85,10 @@ public class JdbcTransaction implements Transaction {
     }
   }
 
+  /**
+   * 回滚事务的方法
+   * @throws SQLException
+   */
   @Override
   public void rollback() throws SQLException {
     if (connection != null && !connection.getAutoCommit()) {
@@ -83,6 +99,10 @@ public class JdbcTransaction implements Transaction {
     }
   }
 
+  /**
+   * 关闭connection连接
+   * @throws SQLException
+   */
   @Override
   public void close() throws SQLException {
     if (connection != null) {
@@ -94,6 +114,10 @@ public class JdbcTransaction implements Transaction {
     }
   }
 
+  /**
+   * 设置连接中的自动提交属性
+   * @param desiredAutoCommit
+   */
   protected void setDesiredAutoCommit(boolean desiredAutoCommit) {
     try {
       if (connection.getAutoCommit() != desiredAutoCommit) {
@@ -111,6 +135,9 @@ public class JdbcTransaction implements Transaction {
     }
   }
 
+  /**
+   * 重置自动提交属性
+   */
   protected void resetAutoCommit() {
     try {
       if (!connection.getAutoCommit()) {
@@ -132,12 +159,19 @@ public class JdbcTransaction implements Transaction {
     }
   }
 
+  /**
+   * 从数据库数据源中打开一个连接
+   * @throws SQLException
+   */
   protected void openConnection() throws SQLException {
     if (log.isDebugEnabled()) {
       log.debug("Opening JDBC Connection");
     }
     connection = dataSource.getConnection();
     if (level != null) {
+      /**
+       * 设置数据库连接的事务隔离级别
+       */
       connection.setTransactionIsolation(level.getLevel());
     }
     setDesiredAutoCommit(autoCommit);

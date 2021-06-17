@@ -25,7 +25,11 @@ import org.apache.ibatis.transaction.Transaction;
 import org.apache.ibatis.transaction.TransactionFactory;
 
 /**
+ * 用于创建一个托管事务ManagedTransaction实例
  * Creates {@link ManagedTransaction} instances.
+ *
+ * 空壳事务管理器，仅是提醒用户，在其他环境中应用时，把事务托管给其他框架，
+ * 比如托管给spring，让spring去管理事务
  *
  * @author Clinton Begin
  *
