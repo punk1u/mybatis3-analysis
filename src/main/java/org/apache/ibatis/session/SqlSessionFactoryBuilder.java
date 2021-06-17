@@ -100,6 +100,12 @@ public class SqlSessionFactoryBuilder {
     }
   }
 
+  /**
+   * 根据Configuration配置信息对象创建SqlSessionFactory对象，
+   * 默认使用DefaultSqlSessionFactory对象作为SqlSession的默认对象
+   * @param config
+   * @return
+   */
   public SqlSessionFactory build(Configuration config) {
     return new DefaultSqlSessionFactory(config);
   }

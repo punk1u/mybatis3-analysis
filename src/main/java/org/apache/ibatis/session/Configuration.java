@@ -109,6 +109,9 @@ public class Configuration {
   protected boolean multipleResultSetsEnabled = true;
   protected boolean useGeneratedKeys;
   protected boolean useColumnLabel = true;
+  /**
+   * 是否启用一级缓存
+   */
   protected boolean cacheEnabled = true;
   protected boolean callSettersOnNulls;
   protected boolean useActualParamName = true;
@@ -125,6 +128,9 @@ public class Configuration {
   protected Integer defaultStatementTimeout;
   protected Integer defaultFetchSize;
   protected ResultSetType defaultResultSetType;
+  /**
+   * 默认使用的Executor执行器类型
+   */
   protected ExecutorType defaultExecutorType = ExecutorType.SIMPLE;
   protected AutoMappingBehavior autoMappingBehavior = AutoMappingBehavior.PARTIAL;
   protected AutoMappingUnknownColumnBehavior autoMappingUnknownColumnBehavior = AutoMappingUnknownColumnBehavior.NONE;
@@ -704,7 +710,7 @@ public class Configuration {
   }
 
   /**
-   * 创建新Executor
+   * 根据事务对象、执行器类型创建新Executor
    * @param transaction
    * @param executorType
    * @return
@@ -723,6 +729,9 @@ public class Configuration {
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+    /**
+     * 将插件调用链应用到执行器上
+     */
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }
