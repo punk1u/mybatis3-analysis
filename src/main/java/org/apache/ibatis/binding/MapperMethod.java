@@ -194,6 +194,9 @@ public class MapperMethod {
 
   private <E> Object executeForMany(SqlSession sqlSession, Object[] args) {
     List<E> result;
+    /**
+     * 把用户传入的参数转换为SqlCommand的Param对象
+     */
     Object param = method.convertArgsToSqlCommandParam(args);
     if (method.hasRowBounds()) {
       RowBounds rowBounds = method.extractRowBounds(args);
