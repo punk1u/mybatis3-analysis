@@ -32,6 +32,9 @@ public class MapperProxyFactory<T> {
    * 当前MapperProxyFactory工厂类最终要生成的代理对象对应的mapper接口类
    */
   private final Class<T> mapperInterface;
+  /**
+   * Mapper接口中的方法与最终调用该方法时的执行对象MapperMethod的封装对象MapperMethodInvoker的映射集合
+   */
   private final Map<Method, MapperMethodInvoker> methodCache = new ConcurrentHashMap<>();
 
   public MapperProxyFactory(Class<T> mapperInterface) {
