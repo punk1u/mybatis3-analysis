@@ -29,6 +29,7 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 各种Builder的基础抽象类，维护了一个全局的Configuration对象
  * @author Clinton Begin
  */
 public abstract class BaseBuilder {

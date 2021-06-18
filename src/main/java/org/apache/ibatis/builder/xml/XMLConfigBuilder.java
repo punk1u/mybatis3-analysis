@@ -83,6 +83,9 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   private XMLConfigBuilder(XPathParser parser, String environment, Properties props) {
+    /**
+     * 调用父类BaseBuilder构造方法
+     */
     super(new Configuration());
     ErrorContext.instance().resource("SQL Mapper Configuration");
     this.configuration.setVariables(props);
@@ -241,6 +244,13 @@ public class XMLConfigBuilder extends BaseBuilder {
     configuration.setLogImpl(logImpl);
   }
 
+  /**
+   * 解析typeAliases节点的内容
+   * 如果<typeAliases>节点下定义了<package>节点，那么MyBatis会给该包下的所有类起一个别名（以类名首字母小写作为别名）
+   * 如果<typeAliases>节点下定义了<typeAlias>节点，那么MyBatis就会给指定的类起指定的别名。
+   * 这些别名都会被存入configuration的typeAliasRegistry容器中。
+   * @param parent
+   */
   private void typeAliasesElement(XNode parent) {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
@@ -620,6 +630,29 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * <mapper>节点的解析过程
+   *
+   * <mapper>节点的定义方式有如下四种：
+   * 1、
+   *    <mappers>
+   *        <package name="org.mybatis.builder"/>
+   *    </mappers>
+   * 2、
+   *    <mappers>
+   *        <mapper resource="org/mybatis/builder/AuthorMapper.xml"/>
+   *    </mappers>
+   * 3、
+   *    <mappers>
+   *        <mapper url="file:///var/mappers/AuthorMapper.xml"/>
+   *    </mappers>
+   * 4、
+   *    <mappers>
+   *        <mapper class="org.mybatis.builder.AuthorMapper"/>
+   *    </mappers>
+   * @param parent
+   * @throws Exception
+   */
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
@@ -635,7 +668,13 @@ public class XMLConfigBuilder extends BaseBuilder {
            * resource节点用于指定要使用的MyBatis SQL XML的全路径名(例如:resources/mapper/MyBatisDemoMapper.xml)
            */
           String resource = child.getStringAttribute("resource");
+          /**
+           * url节点用于指定要使用的MyBatis SQL XML的文件路径（例如：file:///var/mappers/AuthorMapper.xml）
+           */
           String url = child.getStringAttribute("url");
+          /**
+           * class节点用于指定要使用的MyBatis SQL XML文件对应的Mapper接口的路径名（例如：org.mybatis.builder.AuthorMapper）
+           */
           String mapperClass = child.getStringAttribute("class");
           /**
            * mapper节点下的resource、url、class三个节点只能设置一个节点，其他两个必须为空
