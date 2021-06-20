@@ -22,12 +22,16 @@ import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheException;
 
 /**
+ * 提供基本缓存功能的缓存类
  * @author Clinton Begin
  */
 public class PerpetualCache implements Cache {
 
   private final String id;
 
+  /**
+   * 存储缓存数据的HashMap
+   */
   private final Map<Object, Object> cache = new HashMap<>();
 
   public PerpetualCache(String id) {
@@ -44,16 +48,33 @@ public class PerpetualCache implements Cache {
     return cache.size();
   }
 
+  /**
+   * 存储键值对到HashMap的方法
+   * @param key
+   * @param value
+   */
   @Override
   public void putObject(Object key, Object value) {
     cache.put(key, value);
   }
 
+  /**
+   * 查找缓存项
+   * @param key
+   *          The key
+   * @return
+   */
   @Override
   public Object getObject(Object key) {
     return cache.get(key);
   }
 
+  /**
+   * 移除缓存项
+   * @param key
+   *          The key
+   * @return
+   */
   @Override
   public Object removeObject(Object key) {
     return cache.remove(key);
