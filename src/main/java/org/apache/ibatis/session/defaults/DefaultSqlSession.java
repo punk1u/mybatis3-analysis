@@ -52,6 +52,9 @@ public class DefaultSqlSession implements SqlSession {
    * 默认情况下，executor的类型为CachingExecutor,
    * 该类是一个装饰器类，用于给目标Executor增加二级缓存功能，
    * 默认情况下目标Executor是SimpleExecutor
+   *
+   * 这也意味着，一级缓存和SqlSession进行绑定，即只有同一个SqlSession中的一级缓存进行共享，
+   * 多个SqlSession不会共享一级缓存
    */
   private final Executor executor;
 
