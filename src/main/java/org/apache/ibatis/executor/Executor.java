@@ -30,6 +30,8 @@ import org.apache.ibatis.transaction.Transaction;
 /**
  * Executor实现类中的方法在进行下一步操作前，都会先刷新各自的缓存。
  * 默认情况下insert、update 和 delete 操作都会清空一二级缓存。
+ *
+ * Executor对象会被定义在SqlSession中，用于被SqlSession用来执行各自的数据库操作
  * @author Clinton Begin
  */
 public interface Executor {

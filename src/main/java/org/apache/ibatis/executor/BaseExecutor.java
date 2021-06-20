@@ -55,6 +55,10 @@ public abstract class BaseExecutor implements Executor {
   protected Executor wrapper;
 
   protected ConcurrentLinkedQueue<DeferredLoad> deferredLoads;
+  /**
+   * 一级缓存对象，没有被其他缓存类装饰过，一级缓存所存储的查询结果
+   * 会在MyBatis执行更新操作（INSERT|UPDATE|DELETE），以及提交和回滚事务时被清空
+   */
   protected PerpetualCache localCache;
   protected PerpetualCache localOutputParameterCache;
   protected Configuration configuration;
@@ -135,6 +139,9 @@ public abstract class BaseExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameter);
+    /**
+     * 创建CacheKey，用于判断缓存是否存在以及获取缓存
+     */
     CacheKey key = createCacheKey(ms, parameter, rowBounds, boundSql);
     return query(ms, parameter, rowBounds, resultHandler, key, boundSql);
   }
@@ -206,15 +213,35 @@ public abstract class BaseExecutor implements Executor {
     }
   }
 
+  /**
+   * 创建CacheKey，用于判断缓存是否存在以及获取缓存
+   * @param ms
+   * @param parameterObject
+   * @param rowBounds
+   * @param boundSql
+   * @return
+   */
   @Override
   public CacheKey createCacheKey(MappedStatement ms, Object parameterObject, RowBounds rowBounds, BoundSql boundSql) {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+    /**
+     * 创建CacheKey对象
+     */
     CacheKey cacheKey = new CacheKey();
+    /**
+     * 将MappedStatement的id作为影响因子进行计算
+     */
     cacheKey.update(ms.getId());
+    /**
+     * RowBounds用于分页查询，下面将他的两个字段作为影响因子进行计算
+     */
     cacheKey.update(rowBounds.getOffset());
     cacheKey.update(rowBounds.getLimit());
+    /**
+     * 获取SQL语句，并进行计算
+     */
     cacheKey.update(boundSql.getSql());
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
     TypeHandlerRegistry typeHandlerRegistry = ms.getConfiguration().getTypeHandlerRegistry();
@@ -222,6 +249,9 @@ public abstract class BaseExecutor implements Executor {
     for (ParameterMapping parameterMapping : parameterMappings) {
       if (parameterMapping.getMode() != ParameterMode.OUT) {
         Object value;
+        /**
+         * 获取SQL中的占位符#{xxx}对应的运行时参数
+         */
         String propertyName = parameterMapping.getProperty();
         if (boundSql.hasAdditionalParameter(propertyName)) {
           value = boundSql.getAdditionalParameter(propertyName);
@@ -233,11 +263,17 @@ public abstract class BaseExecutor implements Executor {
           MetaObject metaObject = configuration.newMetaObject(parameterObject);
           value = metaObject.getValue(propertyName);
         }
+        /**
+         * 让运行时参数参与计算
+         */
         cacheKey.update(value);
       }
     }
     if (configuration.getEnvironment() != null) {
       // issue #176
+      /**
+       * 获取Environment id遍历，并让其参与计算
+       */
       cacheKey.update(configuration.getEnvironment().getId());
     }
     return cacheKey;
@@ -345,7 +381,7 @@ public abstract class BaseExecutor implements Executor {
   }
 
   /**
-   * 从数据库中查询
+   * 在一级缓存未命中的前提下，从数据库中查询，如果缓存中命中了结果，则不会被调用
    * @param ms
    * @param parameter
    * @param rowBounds

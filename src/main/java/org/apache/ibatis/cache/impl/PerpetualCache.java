@@ -23,6 +23,8 @@ import org.apache.ibatis.cache.CacheException;
 
 /**
  * 提供基本缓存功能的缓存类
+ * 一级缓存对象，一级缓存所存储的查询结果会在MyBatis执行
+ * 更新操作（INSERT|UPDATE|DELETE），以及提交和回滚事务时被清空
  * @author Clinton Begin
  */
 public class PerpetualCache implements Cache {
