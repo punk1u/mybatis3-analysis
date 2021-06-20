@@ -24,6 +24,11 @@ import org.apache.ibatis.cache.CacheException;
 
 /**
  * 具有阻塞功能的缓存类BlockingCache
+ *
+ * 当指定 key 对应元素不存在于缓存中时，BlockingCache 会根据 lock 进行加锁。
+ * 此时，其他线程将会进入等待状态，直到与 key 对应的元素被填充到缓存中。
+ * 而不是让所有线程都去访问数据库。
+ *
  * <p>Simple blocking decorator
  *
  * <p>Simple and inefficient version of EhCache's BlockingCache decorator.
@@ -37,6 +42,9 @@ import org.apache.ibatis.cache.CacheException;
  */
 public class BlockingCache implements Cache {
 
+  /**
+   * 锁等待的时间
+   */
   private long timeout;
   private final Cache delegate;
   private final ConcurrentHashMap<Object, CountDownLatch> locks;
@@ -59,17 +67,32 @@ public class BlockingCache implements Cache {
   @Override
   public void putObject(Object key, Object value) {
     try {
+      /**
+       * 存储缓存项
+       */
       delegate.putObject(key, value);
     } finally {
+      /**
+       * 释放锁
+       */
       releaseLock(key);
     }
   }
 
   @Override
   public Object getObject(Object key) {
+    /**
+     * 请求锁
+     */
     acquireLock(key);
     Object value = delegate.getObject(key);
+    /**
+     * 若缓存命中，则释放锁。未命中则不释放锁
+     */
     if (value != null) {
+      /**
+       * 释放锁
+       */
       releaseLock(key);
     }
     return value;
@@ -78,6 +101,9 @@ public class BlockingCache implements Cache {
   @Override
   public Object removeObject(Object key) {
     // despite of its name, this method is called only to release locks
+    /**
+     * 释放锁
+     */
     releaseLock(key);
     return null;
   }
@@ -88,13 +114,28 @@ public class BlockingCache implements Cache {
   }
 
   private void acquireLock(Object key) {
+    /**
+     * 设置state为1
+     */
     CountDownLatch newLatch = new CountDownLatch(1);
     while (true) {
+      /**
+       * 尝试将这个缓存key对应的锁放入锁Map中
+       */
       CountDownLatch latch = locks.putIfAbsent(key, newLatch);
+      /**
+       * 如果添加锁成功，直接退出当前方法
+       * 否则，说明之前已经存在这个key的缓存锁了，执行后面的等待逻辑
+       */
       if (latch == null) {
         break;
       }
       try {
+        /**
+         * 判断state属性是否为0，如果为0，则继续往下执行，
+         * 如果不为0，则使当前线程进入等待状态，直到某个线程将state属性置为0，
+         * 然后再唤醒再await()方法中等待的线程
+         */
         if (timeout > 0) {
           boolean acquired = latch.await(timeout, TimeUnit.MILLISECONDS);
           if (!acquired) {
