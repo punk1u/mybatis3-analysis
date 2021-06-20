@@ -50,11 +50,12 @@ public class DefaultSqlSession implements SqlSession {
   private final Configuration configuration;
   /**
    * 默认情况下，executor的类型为CachingExecutor,
-   * 该类是一个装饰器类，用于给目标Executor增加二级缓存功能，
+   * 该类是一个装饰器类，用于给目标Executor增加缓存功能（可能需要支持二级缓存，也可能不需要），
    * 默认情况下目标Executor是SimpleExecutor
    *
-   * 这也意味着，一级缓存和SqlSession进行绑定，即只有同一个SqlSession中的一级缓存进行共享，
-   * 多个SqlSession不会共享一级缓存
+   * 因为默认情况下，每次在调用DefaultSqlSessionFactory.openSessionFromDataSource方法创建
+   * 一个全新的SqlSession时都会在SqlSession中创建一个新的下面这个Executor执行器，而一级缓存是定义于
+   * 所有Executor执行器对象的抽象父类BaseExecutor中的，所以一级缓存是和SqlSession绑定的
    */
   private final Executor executor;
 
@@ -166,6 +167,11 @@ public class DefaultSqlSession implements SqlSession {
     try {
       /**
        * 根据statement的name（即xml中声明的SQL操作节点的id）获取对应的MappedStatement
+       *
+       * 因为MappedStatement是从Configuration中取出来的，而且MappedStatement中的Cache对象属性
+       * 是指的这个MappedStatement的二级缓存对象，而每一个SqlSession使用的MappedStatement都是从
+       * Configuration中取出来的，所以二级缓存和一级缓存不一样，是独立于SqlSession之外的，和命名空间绑定的，
+       * 多个SqlSession会共享
        */
       MappedStatement ms = configuration.getMappedStatement(statement);
       /**
