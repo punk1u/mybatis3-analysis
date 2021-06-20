@@ -727,7 +727,8 @@ public class Configuration {
       executor = new SimpleExecutor(this, transaction);
     }
     /**
-     * 如果启用了缓存
+     * 如果启用了缓存，使用上面选择出的非缓存Executor对象作为委托Executor，
+     * 创建CachingExecutor缓存执行器对象
      */
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
