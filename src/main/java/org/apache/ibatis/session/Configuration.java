@@ -726,6 +726,9 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
+    /**
+     * 如果启用了缓存
+     */
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }

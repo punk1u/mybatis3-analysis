@@ -33,12 +33,16 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * 默认作为SqlSession中的Executor类型对象实例的执行器
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
 public class CachingExecutor implements Executor {
 
   private final Executor delegate;
+  /**
+   * 二级缓存对象
+   */
   private final TransactionalCacheManager tcm = new TransactionalCacheManager();
 
   public CachingExecutor(Executor delegate) {
@@ -105,7 +109,8 @@ public class CachingExecutor implements Executor {
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
       throws SQLException {
     /**
-     * 从MappedStatement中获取缓存
+     * 从MappedStatement中获取缓存，这里的Cache并非是在CachingExecutor中创建的，
+     *
      */
     Cache cache = ms.getCache();
     /**
@@ -116,12 +121,24 @@ public class CachingExecutor implements Executor {
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, boundSql);
         @SuppressWarnings("unchecked")
-        List<E> list = (List<E>) tcm.getObject(cache, key);
+        /**
+         * 访问二级缓存
+         */
+          List<E> list = (List<E>) tcm.getObject(cache, key);
+        /**
+         * 如果二级缓存未命中
+         */
         if (list == null) {
           /**
-           * 若缓存未命中，则调用被装饰类的 query 方法
+           * 若二级缓存未命中，则调用被装饰类的 query 方法（尝试从一级缓存获取，若一级缓存也没有，直接从数据库中查询），默认的被装饰类
+           * 为SimpleExecutor(具体过程可参考DefaultSqlSessionFactory.openSessionFromDataSource方法中的新建Executor的过程)，
+           * 而SimpleExecutor继承者BaseExecutor且没有重写下面要执行的
+           * 这个query方法，所以最终调用的是BaseExecutor的query方法
            */
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+          /**
+           * 向二级缓存中缓存查询结果
+           */
           tcm.putObject(cache, key, list); // issue #578 and #116
         }
         return list;
