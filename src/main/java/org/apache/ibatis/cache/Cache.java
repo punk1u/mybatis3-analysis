@@ -21,6 +21,9 @@ import java.util.concurrent.locks.ReadWriteLock;
  *
  * MyBatis中所有缓存的定义接口，定义了一些基本的缓存操作
  *
+ * 不少缓存类没有做保证线程安全的处理，因为Cache实现使用了装饰者模式，
+ * 实现类一层套一层，同步的工作交给了SynchronizedCache类来完成
+ *
  * SPI for cache providers.
  * <p>
  * One instance of cache will be created for each namespace.

@@ -32,8 +32,12 @@ public class LruCache implements Cache {
   private Map<Object, Object> keyMap;
   private Object eldestKey;
 
+
   public LruCache(Cache delegate) {
     this.delegate = delegate;
+    /**
+     * Lru缓存默认缓存个数为1024个元素
+     */
     setSize(1024);
   }
 
@@ -47,14 +51,30 @@ public class LruCache implements Cache {
     return delegate.getSize();
   }
 
+  /**
+   * 指定这个Lru（最少使用）缓存可以存储的元素个数
+   * @param size
+   */
   public void setSize(final int size) {
+    /**
+     * 初始化keyMap，keyMap的类型继承自LinkedHashMap，
+     * 并覆盖了removeEldestEntry方法
+     */
     keyMap = new LinkedHashMap<Object, Object>(size, .75F, true) {
       private static final long serialVersionUID = 4267176411845948333L;
 
+      /**
+       * LinkedHashMap在插入新的键值对时会调用该方法，以决定是否在插入新的键值对后，移除老的键值对
+       * @param eldest
+       * @return
+       */
       @Override
       protected boolean removeEldestEntry(Map.Entry<Object, Object> eldest) {
         boolean tooBig = size() > size;
         if (tooBig) {
+          /**
+           * 获取将要被移除缓存项的键值
+           */
           eldestKey = eldest.getKey();
         }
         return tooBig;
@@ -64,18 +84,32 @@ public class LruCache implements Cache {
 
   @Override
   public void putObject(Object key, Object value) {
+    /**
+     * 存储缓存项，这里为了实现Lru，当被装饰类的容量超出了keyMap的所规定的容量（由构造方法传入）后，
+     * keyMap会移除最长时间未被访问的键，并将该键保存到eldestKey中，然后由cycleKeyList方法将eldestKey
+     * 传给被装饰类的removeObject方法，移除相应的缓存
+     */
     delegate.putObject(key, value);
     cycleKeyList(key);
   }
 
   @Override
   public Object getObject(Object key) {
+    /**
+     * 刷新key在keyMap中的位置
+     */
     keyMap.get(key); // touch
+    /**
+     * 从被装饰类中获取相应缓存项
+     */
     return delegate.getObject(key);
   }
 
   @Override
   public Object removeObject(Object key) {
+    /**
+     * 从被装饰类中移除相应的缓存项
+     */
     return delegate.removeObject(key);
   }
 
@@ -86,8 +120,14 @@ public class LruCache implements Cache {
   }
 
   private void cycleKeyList(Object key) {
+    /**
+     * 存储key到keyMap中
+     */
     keyMap.put(key, key);
     if (eldestKey != null) {
+      /**
+       * 从被装饰类中移除相应的缓存项
+       */
       delegate.removeObject(eldestKey);
       eldestKey = null;
     }
